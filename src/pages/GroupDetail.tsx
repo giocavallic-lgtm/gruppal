@@ -10,8 +10,10 @@ export default function GroupDetail() {
   const nav = useNavigate();
   const group = useStore((s) => s.groups.find((g) => g.id === id));
   const users = useStore((s) => s.users);
-  const plans = useStore((s) => s.plans.filter((p) => p.groupId === id));
-  const bets = useStore((s) => s.bets.filter((b) => b.groupId === id));
+  const allPlans = useStore((s) => s.plans);
+  const allBets = useStore((s) => s.bets);
+  const plans = allPlans.filter((p) => p.groupId === id);
+  const bets = allBets.filter((b) => b.groupId === id);
   const createPlan = useStore((s) => s.createPlan);
   const deleteGroup = useStore((s) => s.deleteGroup);
   const addMember = useStore((s) => s.addMember);
@@ -122,8 +124,15 @@ export default function GroupDetail() {
 
       {tab === 'members' && (
         <div className="space-y-3">
+          <div className="card flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-zinc-400">Código de invitación</p>
+              <p className="text-lg font-mono text-zinc-100 tracking-widest">{group.inviteCode ?? '—'}</p>
+            </div>
+            <button className="btn btn-secondary" onClick={() => { if (group.inviteCode) navigator.clipboard?.writeText(group.inviteCode); }}>Copiar</button>
+          </div>
           <button className="btn btn-secondary w-full flex items-center justify-center gap-2" onClick={() => setMemberOpen(true)}>
-            <UserPlus size={16} /> Añadir miembro
+            <UserPlus size={16} /> Añadir miembro (local)
           </button>
           {memberUsers.map((u: any) => {
             const m = group.members.find((x) => x.userId === u.id)!;

@@ -5,9 +5,12 @@ import { useStore } from '../store';
 export default function Profile() {
   const currentUser = useStore((s) => s.currentUser)!;
   const users = useStore((s) => s.users);
+  const session = useStore((s) => s.session);
+  const mode = useStore((s) => s.mode);
   const updateUser = useStore((s) => s.updateUser);
   const setCurrentUser = useStore((s) => s.setCurrentUser);
   const createUser = useStore((s) => s.createUser);
+  const signOut = useStore((s) => s.signOut);
 
   const [name, setName] = useState(currentUser.name);
   const [newName, setNewName] = useState('');
@@ -17,7 +20,10 @@ export default function Profile() {
     if (name.trim()) updateUser(currentUser.id, { name: name.trim() });
   };
 
-  const handleLogout = () => setCurrentUser(null);
+  const handleLogout = () => {
+    if (mode === 'cloud') signOut();
+    else setCurrentUser(null);
+  };
 
   const handleCreateProfile = () => {
     if (!newName.trim()) return;
@@ -59,11 +65,13 @@ export default function Profile() {
           <div className="flex-1">
             <label className="label">Nombre</label>
             <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
+            {session?.user?.email && <p className="text-xs text-zinc-500 mt-1">{session.user.email}</p>}
           </div>
         </div>
         <button className="btn btn-primary w-full" onClick={handleSave}>Guardar</button>
       </div>
 
+      {mode === 'local' && (
       <div className="card space-y-3">
         <h3 className="font-semibold text-zinc-200">Otros perfiles en este dispositivo</h3>
         <div className="space-y-2">
@@ -79,6 +87,7 @@ export default function Profile() {
           <button className="btn btn-secondary" onClick={handleCreateProfile}><Plus size={16} /></button>
         </div>
       </div>
+      )}
 
       <div className="card space-y-3">
         <h3 className="font-semibold text-zinc-200">Datos</h3>

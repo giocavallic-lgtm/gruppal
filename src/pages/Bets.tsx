@@ -10,7 +10,8 @@ export default function Bets() {
   const [params] = useSearchParams();
   const group = useStore((s) => s.groups.find((g) => g.id === id));
   const users = useStore((s) => s.users);
-  const bets = useStore((s) => s.bets.filter((b) => b.groupId === id));
+  const allBets = useStore((s) => s.bets);
+  const bets = allBets.filter((b) => b.groupId === id);
   const createBet = useStore((s) => s.createBet);
   const currentUser = useStore((s) => s.currentUser)!;
 

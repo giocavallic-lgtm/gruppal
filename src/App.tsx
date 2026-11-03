@@ -1,7 +1,10 @@
+import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useStore } from './store';
+import { hasSupabase } from './config';
 import Layout from './components/Layout';
 import Onboarding from './pages/Onboarding';
+import Auth from './pages/Auth';
 import Home from './pages/Home';
 import GroupDetail from './pages/GroupDetail';
 import PlanDetail from './pages/PlanDetail';
@@ -10,14 +13,37 @@ import BetDetail from './pages/BetDetail';
 import Profile from './pages/Profile';
 
 export default function App() {
+  const initAuth = useStore((s) => s.initAuth);
+  const authLoading = useStore((s) => s.authLoading);
+  const session = useStore((s) => s.session);
   const currentUser = useStore((s) => s.currentUser);
-  if (!currentUser) {
+
+  useEffect(() => { initAuth(); }, [initAuth]);
+
+  if (authLoading) {
     return (
-      <Routes>
-        <Route path="*" element={<Onboarding />} />
-      </Routes>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-zinc-400">Cargando...</div>
+      </div>
     );
   }
+
+  // Cloud mode
+  if (hasSupabase) {
+    if (!session || !currentUser) {
+      return <Auth />;
+    }
+  } else {
+    // Local mode
+    if (!currentUser) {
+      return (
+        <Routes>
+          <Route path="*" element={<Onboarding />} />
+        </Routes>
+      );
+    }
+  }
+
   return (
     <Routes>
       <Route element={<Layout />}>

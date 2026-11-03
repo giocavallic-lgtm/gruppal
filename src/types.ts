@@ -19,6 +19,7 @@ export interface Group {
   description?: string;
   ownerId: ID;
   members: GroupMember[];
+  inviteCode?: string;
   createdAt: number;
 }
 
