@@ -58,7 +58,11 @@ export const useStore = create<AppState & Actions>()(
       },
 
       updateUser: (id, patch) =>
-        set((s) => ({ users: s.users.map((u) => (u.id === id ? { ...u, ...patch } : u)) })),
+        set((s) => {
+          const users = s.users.map((u) => (u.id === id ? { ...u, ...patch } : u));
+          const currentUser = s.currentUser && s.currentUser.id === id ? { ...s.currentUser, ...patch } : s.currentUser;
+          return { users, currentUser };
+        }),
 
       createGroup: (name, description) => {
         const cu = get().currentUser;

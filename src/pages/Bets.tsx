@@ -23,7 +23,7 @@ export default function Bets() {
 
   useEffect(() => { if (params.get('new') === '1') setOpen(true); }, [params]);
 
-  const memberUsers = group?.members.map((m) => users.find((u) => u.id === m.userId)).filter(Boolean) as any[] ?? [];
+  const memberUsers = (group?.members.map((m) => users.find((u) => u.id === m.userId)).filter(Boolean) as any[] ?? []).filter((u: any) => u.id !== currentUser.id);
 
   const addOpt = () => {
     if (!optInput.trim()) return;
