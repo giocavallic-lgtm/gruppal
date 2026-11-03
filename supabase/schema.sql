@@ -136,7 +136,7 @@ create table if not exists public.plans (
   title text not null,
   description text,
   date bigint,
-  created_by uuid references public.profiles(id),
+  created_by uuid references public.profiles(id) on delete set null,
   created_at timestamptz default now()
 );
 alter table public.plans enable row level security;
@@ -155,7 +155,7 @@ create table if not exists public.tasks (
   id uuid primary key default gen_random_uuid(),
   plan_id uuid not null references public.plans(id) on delete cascade,
   title text not null,
-  assignee_id uuid references public.profiles(id),
+  assignee_id uuid references public.profiles(id) on delete set null,
   status text not null default 'todo',
   due_date bigint,
   notes text
@@ -179,7 +179,7 @@ create table if not exists public.expenses (
   plan_id uuid not null references public.plans(id) on delete cascade,
   title text not null,
   amount numeric not null,
-  paid_by uuid not null references public.profiles(id),
+  paid_by uuid not null references public.profiles(id) on delete cascade,
   split_among uuid[] not null,
   created_at timestamptz default now()
 );
@@ -202,10 +202,10 @@ create table if not exists public.bets (
   group_id uuid not null references public.groups(id) on delete cascade,
   title text not null,
   description text,
-  target_user_id uuid not null references public.profiles(id),
+  target_user_id uuid not null references public.profiles(id) on delete cascade,
   status text not null default 'open',
   winning_option_id uuid,
-  created_by uuid references public.profiles(id),
+  created_by uuid references public.profiles(id) on delete set null,
   created_at timestamptz default now(),
   resolved_at timestamptz
 );
@@ -254,7 +254,7 @@ create policy "bo_insert" on public.bet_options for insert with check (
 create table if not exists public.bet_wagers (
   id uuid primary key default gen_random_uuid(),
   bet_id uuid not null references public.bets(id) on delete cascade,
-  user_id uuid not null references public.profiles(id),
+  user_id uuid not null references public.profiles(id) on delete cascade,
   option_id uuid not null references public.bet_options(id) on delete cascade,
   amount numeric,
   created_at timestamptz default now(),
