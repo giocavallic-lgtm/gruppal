@@ -1,32 +1,28 @@
-# React + TypeScript + Vite
+# Gruppal
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+App web móvil (PWA) para grupos de amigos o familias: planes con tareas y fechas, división de gastos/pagos y apuestas privadas entre amigos.
 
-Currently, two official plugins are available:
+## Funcionalidades
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Grupos**: crea grupos, añade miembros (perfiles del dispositivo).
+- **Planes**: título, descripción, fecha. Tareas con asignación, estado (por hacer/en curso/hecho) y fecha límite.
+- **División de pagos**: registra gastos, quién pagó y entre quiénes se divide; cálculo de balances y liquidación sugerida.
+- **Apuestas**: crea apuestas sobre un miembro del grupo; esa persona no puede ver la apuesta. Otros miembros votan/apuestan. Resolución por el creador.
+- **Offline-first**: datos en el navegador (localStorage), con exportar/importar backup.
 
-## React Compiler
+## Uso
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Abre la app en el móvil y añade a pantalla de inicio (PWA).
 
-## Expanding the Oxlint configuration
+- Repo: https://github.com/giocavallic-lgtm/gruppal
+- App: https://giocavallic-lgtm.github.io/gruppal/
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Desarrollo
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
+npm run build
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Color principal: tonos de grises.
