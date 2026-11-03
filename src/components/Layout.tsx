@@ -16,8 +16,8 @@ export default function Layout() {
     <div className="min-h-full flex flex-col">
       <header className="sticky top-0 z-20 bg-zinc-950/80 backdrop-blur border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-zinc-200 text-zinc-900 flex items-center justify-center font-bold">G</div>
-          <span className="font-semibold text-zinc-100">Gruppal</span>
+          <div className="w-8 h-8 rounded-lg bg-zinc-200 text-zinc-900 flex items-center justify-center font-bold">C</div>
+          <span className="font-semibold text-zinc-100">Crewzy</span>
         </div>
         <div className="text-sm text-zinc-400">{cu.name}</div>
       </header>

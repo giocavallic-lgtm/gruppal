@@ -1,4 +1,4 @@
-# Gruppal
+# Crewzy
 
 App web móvil (PWA) para grupos de amigos o familias: planes con tareas y fechas, división de gastos/pagos y apuestas privadas entre amigos.
 

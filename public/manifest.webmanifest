@@ -1,6 +1,6 @@
 {
-  "name": "Gruppal",
-  "short_name": "Gruppal",
+  "name": "Crewzy",
+  "short_name": "Crewzy",
   "description": "Planes, gastos y apuestas con amigos y familia",
   "start_url": "/",
   "display": "standalone",

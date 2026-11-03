@@ -17,8 +17,8 @@ export default function Onboarding() {
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-zinc-200 text-zinc-900 flex items-center justify-center text-3xl font-bold">G</div>
-          <h1 className="mt-4 text-2xl font-bold text-zinc-100">Gruppal</h1>
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-zinc-200 text-zinc-900 flex items-center justify-center text-3xl font-bold">C</div>
+          <h1 className="mt-4 text-2xl font-bold text-zinc-100">Crewzy</h1>
           <p className="text-zinc-400 text-sm mt-1">Planes, gastos y apuestas con tus amigos</p>
         </div>
 
