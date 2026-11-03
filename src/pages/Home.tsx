@@ -18,6 +18,7 @@ export default function Home() {
   const [joinOpen, setJoinOpen] = useState(false);
   const [code, setCode] = useState('');
   const [joinErr, setJoinErr] = useState('');
+  const [joining, setJoining] = useState(false);
 
   const handleCreate = () => {
     if (!name.trim()) return;
@@ -93,11 +94,13 @@ export default function Home() {
             <input className="input" value={code} onChange={(e) => setCode(e.target.value)} placeholder="abc12345" />
           </div>
           {joinErr && <p className="text-red-400 text-sm">{joinErr}</p>}
-          <button className="btn btn-primary w-full" onClick={async () => {
+          <button className="btn btn-primary w-full" disabled={joining} onClick={async () => {
             setJoinErr('');
+            setJoining(true);
             try { const gid = await joinGroupByCode(code.trim()); setJoinOpen(false); setCode(''); nav(`/groups/${gid}`); }
             catch (e: any) { setJoinErr(e?.message ?? 'Código inválido'); }
-          }}>Unirse</button>
+            finally { setJoining(false); }
+          }}>{joining ? 'Uniendo...' : 'Unirse'}</button>
         </div>
       </Modal>
     </div>

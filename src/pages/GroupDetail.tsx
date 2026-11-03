@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, Calendar, Trash2, UserPlus, ArrowRight } from 'lucide-react';
 import { useStore } from '../store';
+import { hasSupabase } from '../config';
 import Modal from '../components/Modal';
 import { formatDate } from '../utils';
 
@@ -131,9 +132,15 @@ export default function GroupDetail() {
             </div>
             <button className="btn btn-secondary" onClick={() => { if (group.inviteCode) navigator.clipboard?.writeText(group.inviteCode); }}>Copiar</button>
           </div>
-          <button className="btn btn-secondary w-full flex items-center justify-center gap-2" onClick={() => setMemberOpen(true)}>
-            <UserPlus size={16} /> Añadir miembro (local)
-          </button>
+          {hasSupabase ? (
+            <p className="text-zinc-500 text-sm text-center py-1">
+              Comparte este código para que tus amigos se unan desde su móvil con «Unirse».
+            </p>
+          ) : (
+            <button className="btn btn-secondary w-full flex items-center justify-center gap-2" onClick={() => setMemberOpen(true)}>
+              <UserPlus size={16} /> Añadir miembro (local)
+            </button>
+          )}
           {memberUsers.map((u: any) => {
             const m = group.members.find((x) => x.userId === u.id)!;
             return (
