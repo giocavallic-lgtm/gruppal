@@ -423,7 +423,7 @@ export default function Profile() {
         <div className="card space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-zinc-400">Versión</span>
-            <span className="font-mono text-xs text-zinc-500">1.0.0</span>
+            <span className="font-mono text-xs text-zinc-500">3.2.6</span>
           </div>
           <a
             href="https://github.com/giocavallic-lgtm/gruppal"
