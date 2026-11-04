@@ -115,6 +115,24 @@ export const useStore = create<AppState & Actions>()(
     (set, get) => {
       const cloud = hasSupabase;
 
+      function awardCoins(userId: string, amount: number) {
+        if (!userId || !amount) return;
+        set((s) => ({
+          users: s.users.map((u) =>
+            u.id === userId ? { ...u, coins: (u.coins ?? 1000) + amount } : u
+          ),
+          currentUser:
+            s.currentUser?.id === userId
+              ? { ...s.currentUser, coins: (s.currentUser.coins ?? 1000) + amount }
+              : s.currentUser,
+        }));
+        if (cloud && supabase) {
+          supabase.rpc('add_coins', { p_user_id: userId, p_amount: amount }).then(({ error }) => {
+            if (error) console.error('add_coins', error);
+          });
+        }
+      }
+
       // ---------- cloud: load all data for current user ----------
       async function loadAll() {
         if (!cloud || !supabase) return;
@@ -242,12 +260,32 @@ export const useStore = create<AppState & Actions>()(
 
       // ---------- realtime ----------
       let realtimeChannel: any = null;
+      let messagesChannel: any = null;
       function subscribeRealtime() {
         if (!cloud || !supabase) return;
         if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+        if (messagesChannel) supabase.removeChannel(messagesChannel);
         realtimeChannel = supabase
           .channel('crewzy-changes')
           .on('postgres_changes', { event: '*', schema: 'public' }, () => { loadAll(); })
+          .subscribe();
+        messagesChannel = supabase
+          .channel('crewzy-messages')
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload: any) => {
+            const row = payload?.new;
+            if (!row || row.user_id === get().currentUser?.id) return;
+            if (typeof document === 'undefined' || !document.hidden) return;
+            if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+            const group = get().groups.find((g) => g.id === row.group_id);
+            const sender = get().users.find((u) => u.id === row.user_id);
+            const title = group ? group.name : 'Crewzy';
+            const body = `${sender?.name ?? 'Alguien'}: ${String(row.body ?? '').slice(0, 100)}`;
+            try {
+              new Notification(title, { body, icon: './icon-192.png', tag: row.group_id });
+            } catch (e) {
+              console.error('notification', e);
+            }
+          })
           .subscribe();
       }
 
@@ -361,10 +399,12 @@ export const useStore = create<AppState & Actions>()(
             supabase.from('groups').insert({ id, name, description, owner_id: cu.id, invite_code: code }).then(({ error }) => {
               if (error) { console.error(error); set((s) => ({ groups: s.groups.filter((x) => x.id !== id) })); }
             });
+            if (cu) awardCoins(cu.id, 10);
             return g;
           }
           const g: Group = { id: uid(), name, description, ownerId: (cu?.id ?? ''), members: cu ? [{ userId: cu.id, role: 'admin', joinedAt: Date.now() }] : [], inviteCode: Math.random().toString(36).slice(2, 10), createdAt: Date.now() };
           set((s) => ({ groups: [...s.groups, g] }));
+          if (cu) awardCoins(cu.id, 10);
           return g;
         },
 
@@ -410,6 +450,7 @@ export const useStore = create<AppState & Actions>()(
               if (error) { console.error(error); set((s) => ({ plans: s.plans.filter((x) => x.id !== id) })); }
             });
           }
+          if (cu) awardCoins(cu.id, 5);
           return p;
         },
 
@@ -489,6 +530,7 @@ export const useStore = create<AppState & Actions>()(
           const opts: BetOption[] = options.map((o) => ({ id: uid(), label: o }));
           const bet: Bet = { id, groupId, title, description, targetUserId, options: opts, wagers: [], status: 'open', createdAt: Date.now(), createdBy: cu?.id ?? '' };
           set((s) => ({ bets: [...s.bets, bet] }));
+          if (cu) awardCoins(cu.id, 5);
           if (cloud && supabase) {
             supabase.from('bets').insert({ id, group_id: groupId, title, description, target_user_id: targetUserId, status: 'open', created_by: cu?.id ?? null }).then(async ({ error }) => {
               if (error) { console.error(error); set((s) => ({ bets: s.bets.filter((x) => x.id !== id) })); return; }
@@ -510,8 +552,11 @@ export const useStore = create<AppState & Actions>()(
         },
 
         resolveBet: (betId, winningOptionId) => {
+          const bet = get().bets.find((b) => b.id === betId);
+          const winners = bet?.wagers.filter((w) => w.optionId === winningOptionId) ?? [];
           set((s) => ({ bets: s.bets.map((b) => (b.id === betId ? { ...b, status: 'resolved', winningOptionId, resolvedAt: Date.now() } : b)) }));
           if (cloud && supabase) supabase.from('bets').update({ status: 'resolved', winning_option_id: winningOptionId, resolved_at: new Date().toISOString() }).eq('id', betId).then(() => {});
+          winners.forEach((w) => awardCoins(w.userId, 20));
         },
 
         cancelBet: (betId) => {

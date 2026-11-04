@@ -385,6 +385,19 @@ create policy "championship_results_members" on public.championship_results for 
 );
 
 -- ============================================================
+-- ============================================================
+-- MONEDAS (recompensas)
+-- ============================================================
+create or replace function public.add_coins(p_user_id uuid, p_amount integer)
+returns void language plpgsql security definer as $$
+begin
+  update public.profiles set coins = coins + p_amount where id = p_user_id;
+end;
+$$;
+
+grant execute on function public.add_coins(uuid, integer) to authenticated;
+
+-- ============================================================
 -- REALTIME (idempotente)
 -- ============================================================
 do $$

@@ -54,6 +54,19 @@ export default function Profile() {
   const [savingPw, setSavingPw] = useState(false);
   const [showPw, setShowPw] = useState(false);
 
+  const [notifPerm, setNotifPerm] = useState<string>(
+    typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
+  );
+
+  const requestNotifications = async () => {
+    if (typeof Notification === 'undefined') {
+      alert('Tu navegador no soporta notificaciones');
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    setNotifPerm(perm);
+  };
+
   const handleSaveName = async () => {
     const value = name.trim();
     if (!value || value === currentUser.name) return;
@@ -250,6 +263,42 @@ export default function Profile() {
           </div>
         </div>
       </section>
+
+      {/* Notificaciones */}
+      {mode === 'cloud' && (
+        <section className="space-y-3">
+          <h2 className="section-title">Notificaciones</h2>
+          <div className="card space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-zinc-200">Avisos del grupo</p>
+                <p className="mt-0.5 text-xs leading-relaxed text-zinc-500">
+                  Recibe un aviso cuando haya mensajes nuevos mientras no estás en la app.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn btn-secondary shrink-0"
+                onClick={requestNotifications}
+                disabled={notifPerm === 'granted' || notifPerm === 'unsupported'}
+              >
+                {notifPerm === 'granted'
+                  ? 'Activadas'
+                  : notifPerm === 'denied'
+                    ? 'Bloqueadas'
+                    : notifPerm === 'unsupported'
+                      ? 'No soportado'
+                      : 'Activar'}
+              </button>
+            </div>
+            {notifPerm === 'denied' && (
+              <p className="text-xs text-red-400">
+                Has bloqueado las notificaciones. Actívalas desde los ajustes del navegador.
+              </p>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Seguridad */}
       {mode === 'cloud' && (
