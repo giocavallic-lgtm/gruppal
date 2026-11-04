@@ -1,4 +1,45 @@
-import type { Plan } from './types';
+import type { Plan, Championship } from './types';
+
+export const F1_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
+export const SIMPLE_POINTS = [10, 8, 6, 5, 4, 3, 2, 1];
+
+export function pointsForPosition(system: number[], position: number): number {
+  return position > 0 ? system[position - 1] ?? 0 : 0;
+}
+
+export interface StandingRow {
+  userId: string;
+  points: number;
+  races: number;
+  wins: number;
+  bestPosition: number | null;
+}
+
+export function computeStandings(championship: Championship): StandingRow[] {
+  const map = new Map<string, StandingRow>();
+  for (const event of championship.events) {
+    for (const result of event.results) {
+      const row = map.get(result.userId) ?? {
+        userId: result.userId,
+        points: 0,
+        races: 0,
+        wins: 0,
+        bestPosition: null,
+      };
+      row.points += result.points;
+      row.races += 1;
+      if (result.position === 1) row.wins += 1;
+      row.bestPosition = row.bestPosition === null ? result.position : Math.min(row.bestPosition, result.position);
+      map.set(result.userId, row);
+    }
+  }
+  return [...map.values()].sort(
+    (a, b) =>
+      b.points - a.points ||
+      b.wins - a.wins ||
+      (a.bestPosition ?? Number.MAX_SAFE_INTEGER) - (b.bestPosition ?? Number.MAX_SAFE_INTEGER)
+  );
+}
 
 export function formatMoney(n: number): string {
   return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);

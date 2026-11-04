@@ -97,6 +97,32 @@ export interface Message {
   createdAt: number;
 }
 
+export interface ChampionshipResult {
+  userId: ID;
+  position: number;
+  points: number;
+}
+
+export interface ChampionshipEvent {
+  id: ID;
+  championshipId: ID;
+  name: string;
+  date?: number;
+  createdAt: number;
+  results: ChampionshipResult[];
+}
+
+export interface Championship {
+  id: ID;
+  groupId: ID;
+  name: string;
+  description?: string;
+  pointsSystem: number[];
+  createdAt: number;
+  createdBy: ID;
+  events: ChampionshipEvent[];
+}
+
 export interface AppState {
   currentUser: User | null;
   users: User[];
@@ -104,4 +130,5 @@ export interface AppState {
   plans: Plan[];
   bets: Bet[];
   messages: Message[];
+  championships: Championship[];
 }

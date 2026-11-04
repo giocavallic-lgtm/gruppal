@@ -316,13 +316,82 @@ drop policy if exists "bw_delete" on public.bet_wagers;
 create policy "bw_delete" on public.bet_wagers for delete using (auth.uid() = user_id);
 
 -- ============================================================
+-- CAMPEONATOS
+-- ============================================================
+create table if not exists public.championships (
+  id uuid primary key default gen_random_uuid(),
+  group_id uuid not null references public.groups(id) on delete cascade,
+  name text not null,
+  description text,
+  points_system jsonb not null default '[25,18,15,12,10,8,6,4,2,1]'::jsonb,
+  created_by uuid references public.profiles(id) on delete set null,
+  created_at timestamptz default now()
+);
+alter table public.championships enable row level security;
+
+drop policy if exists "championships_members" on public.championships;
+create policy "championships_members" on public.championships for all using (
+  public.is_group_member(group_id, auth.uid())
+) with check (
+  public.is_group_member(group_id, auth.uid())
+);
+
+create table if not exists public.championship_events (
+  id uuid primary key default gen_random_uuid(),
+  championship_id uuid not null references public.championships(id) on delete cascade,
+  name text not null,
+  date bigint,
+  created_at timestamptz default now()
+);
+alter table public.championship_events enable row level security;
+
+drop policy if exists "championship_events_members" on public.championship_events;
+create policy "championship_events_members" on public.championship_events for all using (
+  exists (
+    select 1 from public.championships c
+    where c.id = championship_id and public.is_group_member(c.group_id, auth.uid())
+  )
+) with check (
+  exists (
+    select 1 from public.championships c
+    where c.id = championship_id and public.is_group_member(c.group_id, auth.uid())
+  )
+);
+
+create table if not exists public.championship_results (
+  event_id uuid not null references public.championship_events(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  position integer not null check (position > 0),
+  points integer not null default 0,
+  primary key (event_id, user_id)
+);
+alter table public.championship_results enable row level security;
+
+drop policy if exists "championship_results_members" on public.championship_results;
+create policy "championship_results_members" on public.championship_results for all using (
+  exists (
+    select 1
+    from public.championship_events e
+    join public.championships c on c.id = e.championship_id
+    where e.id = event_id and public.is_group_member(c.group_id, auth.uid())
+  )
+) with check (
+  exists (
+    select 1
+    from public.championship_events e
+    join public.championships c on c.id = e.championship_id
+    where e.id = event_id and public.is_group_member(c.group_id, auth.uid())
+  )
+);
+
+-- ============================================================
 -- REALTIME (idempotente)
 -- ============================================================
 do $$
 declare
   t text;
 begin
-  foreach t in array array['groups','group_members','plans','tasks','expenses','bets','bet_options','bet_wagers','messages']::text[]
+  foreach t in array array['groups','group_members','plans','tasks','expenses','bets','bet_options','bet_wagers','messages','championships','championship_events','championship_results']::text[]
   loop
     if not exists (
       select 1 from pg_publication_tables
@@ -342,3 +411,6 @@ create index if not exists idx_tasks_plan on public.tasks(plan_id);
 create index if not exists idx_expenses_plan on public.expenses(plan_id);
 create index if not exists idx_bets_group on public.bets(group_id);
 create index if not exists idx_messages_group on public.messages(group_id, created_at);
+create index if not exists idx_championships_group on public.championships(group_id);
+create index if not exists idx_championship_events_champ on public.championship_events(championship_id);
+create index if not exists idx_championship_results_event on public.championship_results(event_id);

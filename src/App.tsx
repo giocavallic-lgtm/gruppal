@@ -9,6 +9,7 @@ import Auth from './pages/Auth';
 const Home = lazy(() => import('./pages/Home'));
 const GroupDetail = lazy(() => import('./pages/GroupDetail'));
 const PlanDetail = lazy(() => import('./pages/PlanDetail'));
+const ChampionshipDetail = lazy(() => import('./pages/ChampionshipDetail'));
 const Bets = lazy(() => import('./pages/Bets'));
 const BetDetail = lazy(() => import('./pages/BetDetail'));
 const Profile = lazy(() => import('./pages/Profile'));
@@ -76,6 +77,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/groups/:id" element={<GroupDetail />} />
         <Route path="/plans/:id" element={<PlanDetail />} />
+        <Route path="/championships/:id" element={<ChampionshipDetail />} />
         <Route path="/groups/:id/bets" element={<Bets />} />
         <Route path="/bets/:id" element={<BetDetail />} />
         <Route path="/profile" element={<Profile />} />

@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from './lib/supabase';
 import { hasSupabase } from './config';
-import type { AppState, User, Group, GroupMember, Plan, Task, Expense, Bet, BetOption, BetWager, Message, Theme } from './types';
+import type { AppState, User, Group, GroupMember, Plan, Task, Expense, Bet, BetOption, BetWager, Message, Championship, ChampionshipEvent, Theme } from './types';
+import { pointsForPosition } from './utils';
 
 function uid(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
@@ -30,6 +31,18 @@ function rowToBet(r: any, options: BetOption[], wagers: BetWager[]): Bet {
 }
 function rowToMessage(r: any): Message {
   return { id: r.id, groupId: r.group_id, userId: r.user_id, body: r.body, replyToId: r.reply_to_id ?? undefined, createdAt: new Date(r.created_at).getTime() };
+}
+function rowToChampionship(r: any, events: ChampionshipEvent[]): Championship {
+  return {
+    id: r.id,
+    groupId: r.group_id,
+    name: r.name,
+    description: r.description ?? undefined,
+    pointsSystem: Array.isArray(r.points_system) ? r.points_system.map(Number) : [25, 18, 15, 12, 10, 8, 6, 4, 2, 1],
+    createdAt: new Date(r.created_at).getTime(),
+    createdBy: r.created_by ?? '',
+    events,
+  };
 }
 
 interface Actions {
@@ -88,6 +101,13 @@ interface Actions {
   // chat
   sendMessage: (groupId: string, body: string, replyToId?: string) => Message | undefined;
   deleteMessage: (id: string) => void;
+
+  // championships
+  createChampionship: (groupId: string, name: string, description: string | undefined, pointsSystem: number[]) => Championship;
+  deleteChampionship: (id: string) => void;
+  addChampionshipEvent: (championshipId: string, name: string, date?: number) => ChampionshipEvent;
+  deleteChampionshipEvent: (championshipId: string, eventId: string) => void;
+  setEventResults: (championshipId: string, eventId: string, entries: { userId: string; position: number }[]) => void;
 }
 
 export const useStore = create<AppState & Actions>()(
@@ -165,10 +185,49 @@ export const useStore = create<AppState & Actions>()(
           messages = (msgs ?? []).map(rowToMessage).sort((a, b) => a.createdAt - b.createdAt);
         }
 
+        // championships + events + results
+        let championships: Championship[] = [];
+        if (groupIds.length) {
+          const { data: chs } = await supabase.from('championships').select('*').in('group_id', groupIds);
+          const chIds = (chs ?? []).map((c: any) => c.id);
+          let events: any[] = [];
+          let results: any[] = [];
+          if (chIds.length) {
+            const { data: evs } = await supabase.from('championship_events').select('*').in('championship_id', chIds);
+            events = evs ?? [];
+            const evIds = events.map((e: any) => e.id);
+            if (evIds.length) {
+              const { data: rs } = await supabase.from('championship_results').select('*').in('event_id', evIds);
+              results = rs ?? [];
+            }
+          }
+          championships = (chs ?? []).map((c: any) =>
+            rowToChampionship(
+              c,
+              events
+                .filter((e: any) => e.championship_id === c.id)
+                .map((e: any) => ({
+                  id: e.id,
+                  championshipId: e.championship_id,
+                  name: e.name,
+                  date: e.date ?? undefined,
+                  createdAt: new Date(e.created_at).getTime(),
+                  results: results
+                    .filter((r: any) => r.event_id === e.id)
+                    .map((r: any) => ({ userId: r.user_id, position: r.position, points: r.points })),
+                }))
+            )
+          );
+        }
+
         // users cache: collect all member ids
         const allUserIds = new Set<string>();
         groups.forEach((g) => g.members.forEach((m) => allUserIds.add(m.userId)));
         messages.forEach((m) => allUserIds.add(m.userId));
+        championships.forEach((c) => {
+          if (c.createdBy) allUserIds.add(c.createdBy);
+          c.events.forEach((e) => e.results.forEach((r) => allUserIds.add(r.userId)));
+        });
         plans.forEach((p) => { if (p.createdBy) allUserIds.add(p.createdBy); });
         bets.forEach((b) => { allUserIds.add(b.targetUserId); allUserIds.add(b.createdBy); b.wagers.forEach((w) => allUserIds.add(w.userId)); });
         let users: User[] = [user];
@@ -178,7 +237,7 @@ export const useStore = create<AppState & Actions>()(
           if (!users.find((u) => u.id === userId)) users.unshift(user);
         }
 
-        set({ currentUser: user, users, groups, plans, bets, messages, authLoading: false });
+        set({ currentUser: user, users, groups, plans, bets, messages, championships, authLoading: false });
       }
 
       // ---------- realtime ----------
@@ -203,7 +262,7 @@ export const useStore = create<AppState & Actions>()(
         supabase.auth.onAuthStateChange(async (_e, sess) => {
           set({ session: sess });
           if (sess) { await loadAll(); subscribeRealtime(); }
-          else set({ currentUser: null, users: [], groups: [], plans: [], bets: [], messages: [], authLoading: false });
+          else set({ currentUser: null, users: [], groups: [], plans: [], bets: [], messages: [], championships: [], authLoading: false });
         });
       }
 
@@ -219,7 +278,7 @@ export const useStore = create<AppState & Actions>()(
       }
       async function signOut() {
         if (supabase) await supabase.auth.signOut();
-        set({ session: null, currentUser: null, users: [], groups: [], plans: [], bets: [], messages: [] });
+        set({ session: null, currentUser: null, users: [], groups: [], plans: [], bets: [], messages: [], championships: [] });
       }
 
       async function joinGroupByCode(code: string): Promise<string> {
@@ -237,6 +296,7 @@ export const useStore = create<AppState & Actions>()(
         plans: [],
         bets: [],
         messages: [],
+        championships: [],
         session: null,
         authLoading: cloud,
         mode: cloud ? 'cloud' : 'local',
@@ -249,7 +309,7 @@ export const useStore = create<AppState & Actions>()(
         signOut,
         signOutEverywhere: async () => {
           if (supabase) await supabase.auth.signOut({ scope: 'global' });
-          set({ session: null, currentUser: null, users: [], groups: [], plans: [], bets: [], messages: [] });
+          set({ session: null, currentUser: null, users: [], groups: [], plans: [], bets: [], messages: [], championships: [] });
         },
         updateEmail: async (email) => {
           if (!supabase) return;
@@ -488,6 +548,135 @@ export const useStore = create<AppState & Actions>()(
         deleteMessage: (id) => {
           set((s) => ({ messages: s.messages.filter((m) => m.id !== id) }));
           if (cloud && supabase) supabase.from('messages').delete().eq('id', id).then(() => {});
+        },
+
+        // ----- championships -----
+        createChampionship: (groupId, name, description, pointsSystem) => {
+          const cu = get().currentUser;
+          const id = uid();
+          const c: Championship = {
+            id,
+            groupId,
+            name,
+            description,
+            pointsSystem,
+            createdAt: Date.now(),
+            createdBy: cu?.id ?? '',
+            events: [],
+          };
+          set((s) => ({ championships: [...s.championships, c] }));
+          if (cloud && supabase) {
+            supabase
+              .from('championships')
+              .insert({
+                id,
+                group_id: groupId,
+                name,
+                description: description ?? null,
+                points_system: pointsSystem,
+                created_by: cu?.id ?? null,
+              })
+              .then(({ error }) => {
+                if (error) {
+                  console.error(error);
+                  set((s) => ({ championships: s.championships.filter((x) => x.id !== id) }));
+                }
+              });
+          }
+          return c;
+        },
+
+        deleteChampionship: (id) => {
+          set((s) => ({ championships: s.championships.filter((c) => c.id !== id) }));
+          if (cloud && supabase) supabase.from('championships').delete().eq('id', id).then(() => {});
+        },
+
+        addChampionshipEvent: (championshipId, name, date) => {
+          const ev: ChampionshipEvent = {
+            id: uid(),
+            championshipId,
+            name,
+            date,
+            createdAt: Date.now(),
+            results: [],
+          };
+          set((s) => ({
+            championships: s.championships.map((c) =>
+              c.id === championshipId ? { ...c, events: [...c.events, ev] } : c
+            ),
+          }));
+          if (cloud && supabase) {
+            supabase
+              .from('championship_events')
+              .insert({ id: ev.id, championship_id: championshipId, name, date: date ?? null })
+              .then(({ error }) => {
+                if (error) {
+                  console.error(error);
+                  set((s) => ({
+                    championships: s.championships.map((c) =>
+                      c.id === championshipId
+                        ? { ...c, events: c.events.filter((x) => x.id !== ev.id) }
+                        : c
+                    ),
+                  }));
+                }
+              });
+          }
+          return ev;
+        },
+
+        deleteChampionshipEvent: (championshipId, eventId) => {
+          set((s) => ({
+            championships: s.championships.map((c) =>
+              c.id === championshipId
+                ? { ...c, events: c.events.filter((e) => e.id !== eventId) }
+                : c
+            ),
+          }));
+          if (cloud && supabase) supabase.from('championship_events').delete().eq('id', eventId).then(() => {});
+        },
+
+        setEventResults: (championshipId, eventId, entries) => {
+          const championship = get().championships.find((c) => c.id === championshipId);
+          if (!championship) return;
+          const system = championship.pointsSystem;
+          const results = entries.map((e) => ({
+            userId: e.userId,
+            position: e.position,
+            points: pointsForPosition(system, e.position),
+          }));
+          set((s) => ({
+            championships: s.championships.map((c) =>
+              c.id === championshipId
+                ? {
+                    ...c,
+                    events: c.events.map((e) => (e.id === eventId ? { ...e, results } : e)),
+                  }
+                : c
+            ),
+          }));
+          if (cloud && supabase) {
+            const rows = results.map((r) => ({
+              event_id: eventId,
+              user_id: r.userId,
+              position: r.position,
+              points: r.points,
+            }));
+            (async () => {
+              const { error: delError } = await supabase!
+                .from('championship_results')
+                .delete()
+                .eq('event_id', eventId);
+              if (delError) {
+                console.error(delError);
+                return;
+              }
+              if (rows.length) {
+                const { error } = await supabase!.from('championship_results').insert(rows);
+                if (error) console.error(error);
+              }
+            })();
+          }
         },
       };
     },
