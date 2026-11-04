@@ -1,9 +1,7 @@
 import { Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Home as HomeIcon, User } from 'lucide-react';
+import { Home as HomeIcon, User, Gift } from 'lucide-react';
 import { useStore } from '../store';
-
-const APP_NAME = 'Crewzy';
 
 export default function Layout() {
   const nav = useNavigate();
@@ -18,16 +16,26 @@ export default function Layout() {
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="app-header">
-        <div className="mx-auto flex w-full max-w-2xl items-center justify-between px-4 py-2.5">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-zinc-400">💎 <span className="font-semibold text-zinc-100">CrewzGold</span></span>
-            <span className="text-[17px] font-semibold tracking-tight text-zinc-100"> {APP_NAME} </span>
+        <div className="mx-auto flex w-full max-w-2xl items-center justify-between px-4 py-2.5 relative">
+          <button
+            type="button"
+            onClick={() => nav('/')}
+            aria-label="Ir al inicio"
+            className="flex items-center gap-2.5 transition active:scale-95"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-zinc-200 text-[17px] font-bold text-zinc-900 shadow-sm">
+              C
+            </div>
+            <span className="text-[17px] font-semibold tracking-tight text-zinc-100">Crewzy</span>
+          </button>
+          <div className="absolute right-0 start-0 flex items-center gap-2">
+            <Gift className="h-5 w-5 text-zinc-500" />
           </div>
           <button
             type="button"
             onClick={() => nav('/profile')}
             aria-label="Abrir perfil"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800/80 text-sm font-semibold text-zinc-200 ring-1 ring-zinc-700/60 transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 active:scale-95"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800/80 ring-1 ring-zinc-700/60 transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 active:scale-95"
           >
             {cu.avatar ? (
               <img
