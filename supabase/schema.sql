@@ -12,8 +12,13 @@ create extension if not exists "pgcrypto";
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   name text not null,
+  avatar text,
+  coins integer not null default 1000,
   created_at timestamptz default now()
 );
+alter table public.profiles add column if not exists avatar text;
+alter table public.profiles add column if not exists coins integer not null default 1000;
+update public.profiles set coins = 1000 where coins is null;
 alter table public.profiles enable row level security;
 
 drop policy if exists "profiles_read_all" on public.profiles;

@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Home as HomeIcon, User, Gift } from 'lucide-react';
+import { Home as HomeIcon, User, Coins } from 'lucide-react';
 import { useStore } from '../store';
 
 export default function Layout() {
@@ -16,29 +16,35 @@ export default function Layout() {
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="app-header">
-        <div className="mx-auto flex w-full max-w-2xl items-center justify-between px-4 py-2.5 relative">
+        <div className="mx-auto flex w-full max-w-2xl items-center justify-between px-4 py-2.5">
+          <span className="text-[17px] font-semibold tracking-tight text-zinc-100">Crewzy</span>
           <div className="flex items-center gap-2">
-            <span className="text-[17px] font-semibold tracking-tight text-zinc-100">Crewzy</span>
-            <div className="absolute left-0 -mt-2 flex items-center gap-1">
-              <Gift className="h-5 w-5 text-zinc-500" />
+            <div
+              className="flex items-center gap-1.5 rounded-full bg-zinc-800/70 px-2.5 py-1 ring-1 ring-zinc-700/50"
+              title="Tus Crewzys"
+            >
+              <Coins className="h-4 w-4 text-amber-400" strokeWidth={2.2} />
+              <span className="text-[13px] font-semibold tabular-nums text-zinc-100">
+                {cu.coins ?? 1000}
+              </span>
             </div>
+            <button
+              type="button"
+              onClick={() => nav('/profile')}
+              aria-label="Abrir perfil"
+              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-zinc-800/80 ring-1 ring-zinc-700/60 transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 active:scale-95"
+            >
+              {cu.avatar ? (
+                <img
+                  src={cu.avatar}
+                  alt={cu.name}
+                  className="h-full w-full rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex items-center justify-center text-xl text-zinc-200">{cu.name ? cu.name[0] : '?'}</div>
+              )}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => nav('/profile')}
-            aria-label="Abrir perfil"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800/80 ring-1 ring-zinc-700/60 transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 active:scale-95"
-          >
-            {cu.avatar ? (
-              <img
-                src={cu.avatar}
-                alt={cu.name}
-                className="h-full w-full rounded-full object-cover"
-              />
-            ) : (
-              <div className="flex items-center justify-center text-zinc-200 text-xl">{cu.name ? cu.name[0] : '?'}</div>
-            )}
-          </button>
         </div>
       </header>
 

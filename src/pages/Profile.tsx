@@ -171,9 +171,8 @@ export default function Profile() {
                 <div>{currentUser.name ? currentUser.name[0] : 'C'}</div>
               )}
             </div>
-            <div className="min-w-0 flex items-center gap-2">
+            <div className="min-w-0">
               <p className="truncate font-semibold text-zinc-100">{currentUser.name}</p>
-              <p className="text-xs text-zinc-500">{currentUser.coins ?? 0} monedas</p>
             </div>
             <button
               type="button"
