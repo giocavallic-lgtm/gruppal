@@ -11,7 +11,7 @@ function uid(): string {
 
 // ---------- mapping helpers (DB row -> app type) ----------
 function rowToUser(r: any): User {
-  return { id: r.id, name: r.name, createdAt: new Date(r.created_at).getTime() };
+  return { id: r.id, name: r.name, avatar: r.avatar, coins: r.coins ?? 1000, createdAt: new Date(r.created_at).getTime() };
 }
 function rowToGroup(r: any, members: GroupMember[]): Group {
   return { id: r.id, name: r.name, description: r.description ?? undefined, ownerId: r.owner_id, members, inviteCode: r.invite_code, createdAt: new Date(r.created_at).getTime() };
