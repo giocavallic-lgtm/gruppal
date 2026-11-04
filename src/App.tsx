@@ -13,6 +13,7 @@ const ChampionshipDetail = lazy(() => import('./pages/ChampionshipDetail'));
 const Bets = lazy(() => import('./pages/Bets'));
 const BetDetail = lazy(() => import('./pages/BetDetail'));
 const Profile = lazy(() => import('./pages/Profile'));
+const Legal = lazy(() => import('./pages/Legal'));
 
 export default function App() {
   const initAuth = useStore((s) => s.initAuth);
@@ -81,6 +82,7 @@ export default function App() {
         <Route path="/groups/:id/bets" element={<Bets />} />
         <Route path="/bets/:id" element={<BetDetail />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/legal" element={<Legal />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Route>
     </Routes>

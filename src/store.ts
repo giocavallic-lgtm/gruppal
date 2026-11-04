@@ -311,7 +311,7 @@ export const useStore = create<AppState & Actions>()(
       }
       async function signUp(email: string, password: string, name: string) {
         if (!supabase) return;
-        const { error } = await supabase.auth.signUp({ email, password, options: { data: { name } } });
+        const { error } = await supabase.auth.signUp({ email, password, options: { data: { name, accepted_terms: true } } });
         if (error) throw error;
       }
       async function signOut() {

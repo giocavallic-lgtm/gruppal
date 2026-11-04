@@ -483,6 +483,15 @@ export default function Profile() {
             </span>
             <ChevronRight size={16} className="text-zinc-600" />
           </a>
+          <a
+            href="/#/legal"
+            className="flex items-center justify-between text-sm text-zinc-300 transition hover:text-zinc-100"
+          >
+            <span className="flex items-center gap-2">
+              <Info size={16} /> Términos y protección de datos
+            </span>
+            <ChevronRight size={16} className="text-zinc-600" />
+          </a>
           <div className="flex gap-2 rounded-xl bg-zinc-800/50 p-3 text-xs leading-relaxed text-zinc-500">
             <Info size={16} className="mt-0.5 shrink-0 text-zinc-400" />
             <p>

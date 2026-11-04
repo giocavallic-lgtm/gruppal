@@ -15,6 +15,7 @@ export default function Auth() {
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
   const [remember, setRemember] = useState(true);
+  const [accepted, setAccepted] = useState(false);
 
   if (!hasSupabase) {
     return (
@@ -33,8 +34,10 @@ export default function Auth() {
   const submit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (loading) return;
-    setErr('');
-    // Configura la persistencia ANTES de iniciar sesión.
+    if (mode === 'up' && !accepted) {
+      setErr('Debes aceptar los Términos y la Política de privacidad para registrarte');
+      return;
+    }
     try {
       if (remember) localStorage.setItem('crewzy.remember', '1');
       else localStorage.removeItem('crewzy.remember');
@@ -144,9 +147,31 @@ export default function Auth() {
             Recordar este dispositivo
           </label>
 
+          {mode === 'up' && (
+            <label className="flex items-start gap-2 text-xs leading-relaxed text-zinc-400">
+              <input
+                type="checkbox"
+                checked={accepted}
+                onChange={(e) => setAccepted(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-700 bg-zinc-800 text-zinc-200 focus:ring-0"
+                required
+              />
+              <span>
+                Acepto los{' '}
+                <a href="/#/legal" target="_blank" rel="noreferrer" className="font-medium text-zinc-200 underline">
+                  Términos y condiciones
+                </a>{' '}
+                y la{' '}
+                <a href="/#/legal" target="_blank" rel="noreferrer" className="font-medium text-zinc-200 underline">
+                  Política de protección de datos
+                </a>
+              </span>
+            </label>
+          )}
+
           {err && <p className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-red-400">{err}</p>}
 
-          <button type="submit" className="btn btn-primary w-full py-3" disabled={loading}>
+          <button type="submit" className="btn btn-primary w-full py-3" disabled={loading || (mode === 'up' && !accepted)}>
             {loading ? 'Un momento…' : mode === 'in' ? 'Entrar' : 'Crear cuenta'}
           </button>
           <button
