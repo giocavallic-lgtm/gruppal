@@ -14,6 +14,7 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
+  const [remember, setRemember] = useState(true);
 
   if (!hasSupabase) {
     return (
@@ -33,6 +34,18 @@ export default function Auth() {
     e?.preventDefault();
     if (loading) return;
     setErr('');
+    // Configura la persistencia ANTES de iniciar sesión.
+    try {
+      if (remember) localStorage.setItem('crewzy.remember', '1');
+      else localStorage.removeItem('crewzy.remember');
+      for (const store of [localStorage, sessionStorage]) {
+        Object.keys(store)
+          .filter((k) => k.startsWith('sb-') && k.endsWith('-auth-token'))
+          .forEach((k) => store.removeItem(k));
+      }
+    } catch {
+      /* ignore */
+    }
     setLoading(true);
     try {
       if (mode === 'in') await signIn(email.trim(), password);
@@ -120,6 +133,16 @@ export default function Auth() {
               </button>
             </div>
           </div>
+
+          <label className="flex items-center gap-2 text-sm text-zinc-400">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="h-4 w-4 rounded border-zinc-700 bg-zinc-800 text-zinc-200 focus:ring-0"
+            />
+            Recordar este dispositivo
+          </label>
 
           {err && <p className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-red-400">{err}</p>}
 
