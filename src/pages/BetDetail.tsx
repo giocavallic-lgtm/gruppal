@@ -178,9 +178,15 @@ export default function BetDetail() {
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                 />
+                <p className="mt-1 text-xs text-zinc-500">
+                  Tu saldo: {currentUser.coins ?? 1000} créditos
+                  {Number(amount) > (currentUser.coins ?? 1000) + (myWager?.amount ?? 0) && (
+                    <span className="text-red-400"> · Saldo insuficiente</span>
+                  )}
+                </p>
               </div>
               <div className="flex gap-2">
-                <button className="btn btn-primary flex-1" onClick={handleWager} disabled={!selected}>
+                <button className="btn btn-primary flex-1" onClick={handleWager} disabled={!selected || Number(amount) > (currentUser.coins ?? 1000) + (myWager?.amount ?? 0)}>
                   {editing ? 'Guardar cambio' : 'Apostar'}
                 </button>
                 {editing && (
@@ -226,6 +232,11 @@ export default function BetDetail() {
               {bet.options.find((o) => o.id === bet.winningOptionId)?.label}
             </span>
           </p>
+          {totalCredits > 0 && (
+            <p className="mt-1 text-xs text-zinc-500">
+              Bote repartido: {totalCredits} créditos
+            </p>
+          )}
         </div>
       )}
 

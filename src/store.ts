@@ -541,30 +541,68 @@ export const useStore = create<AppState & Actions>()(
         },
 
         addWager: (betId, userId, optionId, amount) => {
+          const amt = amount ?? 0;
+          const bet = get().bets.find((b) => b.id === betId);
+          const prev = bet?.wagers.find((w) => w.userId === userId);
+          const prevAmount = prev?.amount ?? 0;
+          const cu = get().currentUser;
+          const available = (cu?.coins ?? 1000) + prevAmount;
+          if (amt > available) return;
+          if (prev && prevAmount > 0) awardCoins(userId, prevAmount);
+          if (amt > 0) awardCoins(userId, -amt);
           set((s) => ({
             bets: s.bets.map((b) =>
-              b.id === betId ? { ...b, wagers: [...b.wagers.filter((w) => w.userId !== userId), { userId, optionId, amount, createdAt: Date.now() }] } : b
+              b.id === betId
+                ? { ...b, wagers: [...b.wagers.filter((w) => w.userId !== userId), { userId, optionId, amount: amt || undefined, createdAt: Date.now() }] }
+                : b
             ),
           }));
           if (cloud && supabase) {
-            supabase.from('bet_wagers').upsert({ bet_id: betId, user_id: userId, option_id: optionId, amount: amount ?? null }, { onConflict: 'bet_id,user_id' }).then(() => {});
+            supabase.from('bet_wagers').upsert({ bet_id: betId, user_id: userId, option_id: optionId, amount: amt || null }, { onConflict: 'bet_id,user_id' }).then(() => {});
           }
         },
 
         resolveBet: (betId, winningOptionId) => {
           const bet = get().bets.find((b) => b.id === betId);
-          const winners = bet?.wagers.filter((w) => w.optionId === winningOptionId) ?? [];
+          const wagers = bet?.wagers ?? [];
+          const totalPot = wagers.reduce((sum, w) => sum + (w.amount ?? 0), 0);
+          const winningPool = wagers.filter((w) => w.optionId === winningOptionId).reduce((sum, w) => sum + (w.amount ?? 0), 0);
           set((s) => ({ bets: s.bets.map((b) => (b.id === betId ? { ...b, status: 'resolved', winningOptionId, resolvedAt: Date.now() } : b)) }));
           if (cloud && supabase) supabase.from('bets').update({ status: 'resolved', winning_option_id: winningOptionId, resolved_at: new Date().toISOString() }).eq('id', betId).then(() => {});
-          winners.forEach((w) => awardCoins(w.userId, 20));
+          if (winningPool > 0 && totalPot > 0) {
+            // distribuir el bote proporcionalmente entre los ganadores
+            const winners = wagers.filter((w) => w.optionId === winningOptionId);
+            let distributed = 0;
+            winners.forEach((w, idx) => {
+              const amt = w.amount ?? 0;
+              const payout = idx === winners.length - 1 ? totalPot - distributed : Math.floor((amt / winningPool) * totalPot);
+              distributed += payout;
+              if (payout > 0) awardCoins(w.userId, payout);
+            });
+          } else if (totalPot > 0) {
+            // nadie acertó: devolver todo
+            wagers.forEach((w) => {
+              if ((w.amount ?? 0) > 0) awardCoins(w.userId, w.amount ?? 0);
+            });
+          }
         },
 
         cancelBet: (betId) => {
+          const bet = get().bets.find((b) => b.id === betId);
+          bet?.wagers.forEach((w) => {
+            if ((w.amount ?? 0) > 0) awardCoins(w.userId, w.amount ?? 0);
+          });
           set((s) => ({ bets: s.bets.map((b) => (b.id === betId ? { ...b, status: 'cancelled' } : b)) }));
           if (cloud && supabase) supabase.from('bets').update({ status: 'cancelled' }).eq('id', betId).then(() => {});
         },
 
         deleteBet: (betId) => {
+          const bet = get().bets.find((b) => b.id === betId);
+          if (bet && bet.status === 'open') {
+            bet.wagers.forEach((w) => {
+              if ((w.amount ?? 0) > 0) awardCoins(w.userId, w.amount ?? 0);
+            });
+          }
           set((s) => ({ bets: s.bets.filter((b) => b.id !== betId) }));
           if (cloud && supabase) supabase.from('bets').delete().eq('id', betId).then(() => {});
         },
