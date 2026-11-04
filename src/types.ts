@@ -88,10 +88,19 @@ export interface Bet {
   resolvedAt?: number;
 }
 
+export interface Message {
+  id: ID;
+  groupId: ID;
+  userId: ID;
+  body: string;
+  createdAt: number;
+}
+
 export interface AppState {
   currentUser: User | null;
   users: User[];
   groups: Group[];
   plans: Plan[];
   bets: Bet[];
+  messages: Message[];
 }

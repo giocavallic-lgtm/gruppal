@@ -78,6 +78,31 @@ returns boolean language sql security definer stable as $$
   select exists (select 1 from public.group_members where group_id = gid and user_id = uid);
 $$;
 
+-- ============================================================
+-- CHAT DE GRUPO
+-- ============================================================
+create table if not exists public.messages (
+  id uuid primary key default gen_random_uuid(),
+  group_id uuid not null references public.groups(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  body text not null check (char_length(body) between 1 and 2000),
+  created_at timestamptz not null default now()
+);
+alter table public.messages enable row level security;
+
+drop policy if exists "messages_read_members" on public.messages;
+create policy "messages_read_members" on public.messages for select using (
+  public.is_group_member(group_id, auth.uid())
+);
+drop policy if exists "messages_insert_members" on public.messages;
+create policy "messages_insert_members" on public.messages for insert with check (
+  auth.uid() = user_id and public.is_group_member(group_id, auth.uid())
+);
+drop policy if exists "messages_delete_own" on public.messages;
+create policy "messages_delete_own" on public.messages for delete using (
+  auth.uid() = user_id
+);
+
 -- Políticas de groups
 drop policy if exists "groups_read_members" on public.groups;
 create policy "groups_read_members" on public.groups for select using (
@@ -295,7 +320,7 @@ do $$
 declare
   t text;
 begin
-  foreach t in array array['groups','group_members','plans','tasks','expenses','bets','bet_options','bet_wagers']::text[]
+  foreach t in array array['groups','group_members','plans','tasks','expenses','bets','bet_options','bet_wagers','messages']::text[]
   loop
     if not exists (
       select 1 from pg_publication_tables
@@ -314,3 +339,4 @@ create index if not exists idx_plans_group on public.plans(group_id);
 create index if not exists idx_tasks_plan on public.tasks(plan_id);
 create index if not exists idx_expenses_plan on public.expenses(plan_id);
 create index if not exists idx_bets_group on public.bets(group_id);
+create index if not exists idx_messages_group on public.messages(group_id, created_at);

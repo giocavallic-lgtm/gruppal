@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from './lib/supabase';
 import { hasSupabase } from './config';
-import type { AppState, User, Group, GroupMember, Plan, Task, Expense, Bet, BetOption, BetWager, Theme } from './types';
+import type { AppState, User, Group, GroupMember, Plan, Task, Expense, Bet, BetOption, BetWager, Message, Theme } from './types';
 
 function uid(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
@@ -27,6 +27,9 @@ function rowToPlan(r: any, tasks: Task[], expenses: Expense[]): Plan {
 }
 function rowToBet(r: any, options: BetOption[], wagers: BetWager[]): Bet {
   return { id: r.id, groupId: r.group_id, title: r.title, description: r.description ?? undefined, targetUserId: r.target_user_id, options, wagers, status: r.status, winningOptionId: r.winning_option_id ?? undefined, createdAt: new Date(r.created_at).getTime(), createdBy: r.created_by ?? '', resolvedAt: r.resolved_at ? new Date(r.resolved_at).getTime() : undefined };
+}
+function rowToMessage(r: any): Message {
+  return { id: r.id, groupId: r.group_id, userId: r.user_id, body: r.body, createdAt: new Date(r.created_at).getTime() };
 }
 
 interface Actions {
@@ -81,6 +84,10 @@ interface Actions {
   resolveBet: (betId: string, winningOptionId: string) => void;
   cancelBet: (betId: string) => void;
   deleteBet: (betId: string) => void;
+
+  // chat
+  sendMessage: (groupId: string, body: string) => Message | undefined;
+  deleteMessage: (id: string) => void;
 }
 
 export const useStore = create<AppState & Actions>()(
@@ -146,9 +153,22 @@ export const useStore = create<AppState & Actions>()(
           bets = (bs ?? []).filter((b: any) => b.target_user_id !== userId).map((b: any) => rowToBet(b, optionsByBet[b.id] ?? [], wagersByBet[b.id] ?? []));
         }
 
+        // messages for these groups (latest 1000, then chronological)
+        let messages: Message[] = [];
+        if (groupIds.length) {
+          const { data: msgs } = await supabase
+            .from('messages')
+            .select('*')
+            .in('group_id', groupIds)
+            .order('created_at', { ascending: false })
+            .limit(1000);
+          messages = (msgs ?? []).map(rowToMessage).sort((a, b) => a.createdAt - b.createdAt);
+        }
+
         // users cache: collect all member ids
         const allUserIds = new Set<string>();
         groups.forEach((g) => g.members.forEach((m) => allUserIds.add(m.userId)));
+        messages.forEach((m) => allUserIds.add(m.userId));
         plans.forEach((p) => { if (p.createdBy) allUserIds.add(p.createdBy); });
         bets.forEach((b) => { allUserIds.add(b.targetUserId); allUserIds.add(b.createdBy); b.wagers.forEach((w) => allUserIds.add(w.userId)); });
         let users: User[] = [user];
@@ -158,7 +178,7 @@ export const useStore = create<AppState & Actions>()(
           if (!users.find((u) => u.id === userId)) users.unshift(user);
         }
 
-        set({ currentUser: user, users, groups, plans, bets, authLoading: false });
+        set({ currentUser: user, users, groups, plans, bets, messages, authLoading: false });
       }
 
       // ---------- realtime ----------
@@ -183,7 +203,7 @@ export const useStore = create<AppState & Actions>()(
         supabase.auth.onAuthStateChange(async (_e, sess) => {
           set({ session: sess });
           if (sess) { await loadAll(); subscribeRealtime(); }
-          else set({ currentUser: null, users: [], groups: [], plans: [], bets: [], authLoading: false });
+          else set({ currentUser: null, users: [], groups: [], plans: [], bets: [], messages: [], authLoading: false });
         });
       }
 
@@ -199,7 +219,7 @@ export const useStore = create<AppState & Actions>()(
       }
       async function signOut() {
         if (supabase) await supabase.auth.signOut();
-        set({ session: null, currentUser: null, users: [], groups: [], plans: [], bets: [] });
+        set({ session: null, currentUser: null, users: [], groups: [], plans: [], bets: [], messages: [] });
       }
 
       async function joinGroupByCode(code: string): Promise<string> {
@@ -216,6 +236,7 @@ export const useStore = create<AppState & Actions>()(
         groups: [],
         plans: [],
         bets: [],
+        messages: [],
         session: null,
         authLoading: cloud,
         mode: cloud ? 'cloud' : 'local',
@@ -228,7 +249,7 @@ export const useStore = create<AppState & Actions>()(
         signOut,
         signOutEverywhere: async () => {
           if (supabase) await supabase.auth.signOut({ scope: 'global' });
-          set({ session: null, currentUser: null, users: [], groups: [], plans: [], bets: [] });
+          set({ session: null, currentUser: null, users: [], groups: [], plans: [], bets: [], messages: [] });
         },
         updateEmail: async (email) => {
           if (!supabase) return;
@@ -441,6 +462,32 @@ export const useStore = create<AppState & Actions>()(
         deleteBet: (betId) => {
           set((s) => ({ bets: s.bets.filter((b) => b.id !== betId) }));
           if (cloud && supabase) supabase.from('bets').delete().eq('id', betId).then(() => {});
+        },
+
+        // ----- chat -----
+        sendMessage: (groupId, body) => {
+          const cu = get().currentUser;
+          const text = body.trim();
+          if (!cu || !text) return undefined;
+          const m: Message = { id: uid(), groupId, userId: cu.id, body: text, createdAt: Date.now() };
+          set((s) => ({ messages: [...s.messages, m] }));
+          if (cloud && supabase) {
+            supabase
+              .from('messages')
+              .insert({ id: m.id, group_id: groupId, user_id: cu.id, body: text })
+              .then(({ error }) => {
+                if (error) {
+                  console.error(error);
+                  set((s) => ({ messages: s.messages.filter((x) => x.id !== m.id) }));
+                }
+              });
+          }
+          return m;
+        },
+
+        deleteMessage: (id) => {
+          set((s) => ({ messages: s.messages.filter((m) => m.id !== id) }));
+          if (cloud && supabase) supabase.from('messages').delete().eq('id', id).then(() => {});
         },
       };
     },

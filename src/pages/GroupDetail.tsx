@@ -5,6 +5,7 @@ import { useStore } from '../store';
 import { hasSupabase } from '../config';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
+import GroupChat from '../components/GroupChat';
 import { formatDate } from '../utils';
 
 export default function GroupDetail() {
@@ -22,7 +23,7 @@ export default function GroupDetail() {
   const removeMember = useStore((s) => s.removeMember);
   const currentUser = useStore((s) => s.currentUser)!;
 
-  const [tab, setTab] = useState<'plans' | 'bets' | 'members'>('plans');
+  const [tab, setTab] = useState<'chat' | 'plans' | 'bets' | 'members'>('plans');
   const [planOpen, setPlanOpen] = useState(false);
   const [planTitle, setPlanTitle] = useState('');
   const [planDesc, setPlanDesc] = useState('');
@@ -109,7 +110,7 @@ export default function GroupDetail() {
       />
 
       <div className="seg" role="tablist" aria-label="Secciones del grupo">
-        {(['plans', 'bets', 'members'] as const).map((t) => (
+        {(['chat', 'plans', 'bets', 'members'] as const).map((t) => (
           <button
             key={t}
             type="button"
@@ -118,10 +119,12 @@ export default function GroupDetail() {
             onClick={() => setTab(t)}
             className={tab === t ? 'active' : ''}
           >
-            {t === 'plans' ? 'Planes' : t === 'bets' ? 'Apuestas' : 'Miembros'}
+            {t === 'chat' ? 'Chat' : t === 'plans' ? 'Planes' : t === 'bets' ? 'Apuestas' : 'Miembros'}
           </button>
         ))}
       </div>
+
+      {tab === 'chat' && <GroupChat groupId={group.id} />}
 
       {tab === 'plans' && (
         <div className="space-y-3">
