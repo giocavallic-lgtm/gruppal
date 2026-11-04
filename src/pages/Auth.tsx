@@ -158,11 +158,11 @@ export default function Auth() {
               />
               <span>
                 Acepto los{' '}
-                <a href="/#/legal" target="_blank" rel="noreferrer" className="font-medium text-zinc-200 underline">
+                <a href="#/legal" target="_blank" rel="noreferrer" className="font-medium text-zinc-200 underline">
                   Términos y condiciones
                 </a>{' '}
                 y la{' '}
-                <a href="/#/legal" target="_blank" rel="noreferrer" className="font-medium text-zinc-200 underline">
+                <a href="#/legal" target="_blank" rel="noreferrer" className="font-medium text-zinc-200 underline">
                   Política de protección de datos
                 </a>
               </span>

@@ -36,8 +36,9 @@ export default function GroupDetail() {
   const [champOpen, setChampOpen] = useState(false);
   const [champName, setChampName] = useState('');
   const [champDesc, setChampDesc] = useState('');
+  const [champScoringType, setChampScoringType] = useState<'points' | 'times'>('points');
   const [champPreset, setChampPreset] = useState<'f1' | 'simple' | 'custom'>('f1');
-  const [champPoints, setChampPoints] = useState(F1_POINTS.join(', '));
+  const [pointsRows, setPointsRows] = useState<string[]>(F1_POINTS.map(String));
   const [copied, setCopied] = useState(false);
 
   if (!group) return <div className="text-zinc-400">Grupo no encontrado</div>;
@@ -63,23 +64,22 @@ export default function GroupDetail() {
 
   const handleCreateChampionship = () => {
     if (!champName.trim()) return;
-    const points =
-      champPreset === 'f1'
-        ? F1_POINTS
-        : champPreset === 'simple'
-          ? SIMPLE_POINTS
-          : champPoints
-              .split(/[\s,;]+/)
-              .map((x) => parseInt(x, 10))
-              .filter((n) => Number.isFinite(n) && n >= 0);
-    if (!points.length) return;
-    const c = createChampionship(group.id, champName.trim(), champDesc.trim() || undefined, points);
+    let scoringType: 'points' | 'times' = champScoringType;
+    let pointsSystem: number[] = [];
+    if (scoringType === 'points') {
+      if (champPreset === 'f1') pointsSystem = [...F1_POINTS];
+      else if (champPreset === 'simple') pointsSystem = [...SIMPLE_POINTS];
+      else pointsSystem = pointsRows.map((x) => parseInt(x, 10)).filter((n) => Number.isFinite(n) && n >= 0);
+      if (!pointsSystem.length) return;
+    }
+    const c = createChampionship(group.id, champName.trim(), champDesc.trim() || undefined, scoringType, pointsSystem);
     setChampOpen(false);
     setChampName('');
     setChampDesc('');
+    setChampScoringType('points');
     setChampPreset('f1');
-    setChampPoints(F1_POINTS.join(', '));
-    nav(`/championships/${c.id}`);
+    setPointsRows(F1_POINTS.map(String));
+    nav('/championships/' + c.id);
   };
 
   const handleDeleteGroup = () => {
@@ -448,36 +448,98 @@ export default function GroupDetail() {
             />
           </div>
           <div>
-            <span className="label">Puntos por posición</span>
-            <div className="seg mb-2">
-              {(['f1', 'simple', 'custom'] as const).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setChampPreset(p)}
-                  className={champPreset === p ? 'active' : ''}
-                >
-                  {p === 'f1' ? 'F1' : p === 'simple' ? 'Simple' : 'Custom'}
-                </button>
-              ))}
+            <span className="label">Tipo de puntuacion</span>
+            <div className="seg mb-3">
+              <button type="button" onClick={() => setChampScoringType('points')} className={champScoringType === 'points' ? 'active' : ''}>
+                Por puntos
+              </button>
+              <button type="button" onClick={() => setChampScoringType('times')} className={champScoringType === 'times' ? 'active' : ''}>
+                Por tiempos
+              </button>
             </div>
-            {champPreset === 'custom' ? (
-              <input
-                className="input"
-                value={champPoints}
-                onChange={(e) => setChampPoints(e.target.value)}
-                placeholder="25, 18, 15, 12, 10…"
-              />
-            ) : (
-              <p className="text-xs text-zinc-500">
-                {(champPreset === 'f1' ? F1_POINTS : SIMPLE_POINTS).join(' · ')}
+
+            {champScoringType === 'points' && (
+              <>
+                <span className="label">Sistema de puntos</span>
+                <div className="seg mb-3">
+                  {(['f1', 'simple', 'custom'] as const).map((pp) => (
+                    <button
+                      key={pp}
+                      type="button"
+                      onClick={() => {
+                        setChampPreset(pp);
+                        if (pp === 'f1') setPointsRows(F1_POINTS.map(String));
+                        else if (pp === 'simple') setPointsRows(SIMPLE_POINTS.map(String));
+                      }}
+                      className={champPreset === pp ? 'active' : ''}
+                    >
+                      {pp === 'f1' ? 'F1' : pp === 'simple' ? 'Simple' : 'Custom'}
+                    </button>
+                  ))}
+                </div>
+
+                {champPreset === 'custom' && (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-zinc-500">
+                      <span>Posicion</span>
+                      <span>Puntos</span>
+                    </div>
+                    {pointsRows.map((val, idx) => (
+                      <div key={idx} className="grid grid-cols-2 gap-2">
+                        <input className="input py-1.5 text-center" value={idx + 1} disabled />
+                        <input
+                          className="input py-1.5 text-center"
+                          type="number"
+                          min="0"
+                          value={val}
+                          onChange={(e) => {
+                            const next = [...pointsRows];
+                            next[idx] = e.target.value;
+                            setPointsRows(next);
+                          }}
+                        />
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        className="btn btn-ghost flex-1 text-xs"
+                        onClick={() => setPointsRows([...pointsRows, '0'])}
+                      >
+                        + Anadir posicion
+                      </button>
+                      {pointsRows.length > 1 && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost flex-1 text-xs"
+                          onClick={() => setPointsRows(pointsRows.slice(0, -1))}
+                        >
+                          Quitar ultima
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {champPreset !== 'custom' && (
+                  <p className="text-xs text-zinc-500">
+                    {(champPreset === 'f1' ? F1_POINTS : SIMPLE_POINTS).join(' · ')}
+                  </p>
+                )}
+              </>
+            )}
+
+            {champScoringType === 'times' && (
+              <p className="text-xs leading-relaxed text-zinc-500">
+                Los resultados se introducen como tiempos. La clasificacion ordena de menor a mayor tiempo
+                total (suma de todas las pruebas).
               </p>
             )}
           </div>
+
           <button
             className="btn btn-primary w-full py-3"
             onClick={handleCreateChampionship}
-            disabled={!champName.trim() || (champPreset === 'custom' && !champPoints.trim())}
+            disabled={!champName.trim() || (champScoringType === 'points' && champPreset === 'custom' && !pointsRows.some((x) => x.trim() !== ''))}
           >
             Crear campeonato
           </button>

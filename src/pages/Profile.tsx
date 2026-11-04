@@ -484,7 +484,7 @@ export default function Profile() {
             <ChevronRight size={16} className="text-zinc-600" />
           </a>
           <a
-            href="/#/legal"
+            href="#/legal"
             className="flex items-center justify-between text-sm text-zinc-300 transition hover:text-zinc-100"
           >
             <span className="flex items-center gap-2">

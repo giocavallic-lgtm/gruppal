@@ -13,6 +13,8 @@ export interface StandingRow {
   races: number;
   wins: number;
   bestPosition: number | null;
+  totalTimeMs?: number;
+  bestTimeMs?: number;
 }
 
 export function computeStandings(championship: Championship): StandingRow[] {
@@ -25,20 +27,45 @@ export function computeStandings(championship: Championship): StandingRow[] {
         races: 0,
         wins: 0,
         bestPosition: null,
+        totalTimeMs: 0,
+        bestTimeMs: undefined,
       };
       row.points += result.points;
       row.races += 1;
       if (result.position === 1) row.wins += 1;
       row.bestPosition = row.bestPosition === null ? result.position : Math.min(row.bestPosition, result.position);
+      if (result.timeMs != null) {
+        row.totalTimeMs = (row.totalTimeMs ?? 0) + result.timeMs;
+        row.bestTimeMs = row.bestTimeMs == null ? result.timeMs : Math.min(row.bestTimeMs, result.timeMs);
+      }
       map.set(result.userId, row);
     }
   }
-  return [...map.values()].sort(
+  const rows = [...map.values()];
+  if (championship.scoringType === 'times') {
+    return rows.sort(
+      (a, b) =>
+        (a.totalTimeMs ?? Number.MAX_SAFE_INTEGER) - (b.totalTimeMs ?? Number.MAX_SAFE_INTEGER) ||
+        (a.bestTimeMs ?? Number.MAX_SAFE_INTEGER) - (b.bestTimeMs ?? Number.MAX_SAFE_INTEGER)
+    );
+  }
+  return rows.sort(
     (a, b) =>
       b.points - a.points ||
       b.wins - a.wins ||
       (a.bestPosition ?? Number.MAX_SAFE_INTEGER) - (b.bestPosition ?? Number.MAX_SAFE_INTEGER)
   );
+}
+
+export function formatTimeMs(ms: number): string {
+  if (!Number.isFinite(ms)) return '—';
+  const totalSeconds = ms / 1000;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds - minutes * 60;
+  if (minutes > 0) {
+    return `${minutes}:${seconds.toFixed(2).padStart(5, '0')}`;
+  }
+  return `${seconds.toFixed(2)}s`;
 }
 
 export function formatMoney(n: number): string {

@@ -97,10 +97,13 @@ export interface Message {
   createdAt: number;
 }
 
+export type ScoringType = 'points' | 'times';
+
 export interface ChampionshipResult {
   userId: ID;
   position: number;
   points: number;
+  timeMs?: number;
 }
 
 export interface ChampionshipEvent {
@@ -117,6 +120,7 @@ export interface Championship {
   groupId: ID;
   name: string;
   description?: string;
+  scoringType: ScoringType;
   pointsSystem: number[];
   createdAt: number;
   createdBy: ID;

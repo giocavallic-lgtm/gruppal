@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Crewzy</title>
+    <script>
+      // GitHub Pages SPA fallback: redirect unknown paths to the app root (hash router).
+      (function () {
+        var base = '/gruppal/';
+        var path = window.location.pathname;
+        if (path.indexOf(base) === 0) path = path.slice(base.length);
+        else path = path.replace(/^\/+/, '');
+        window.location.replace(base + '#/' + path);
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>

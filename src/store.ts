@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from './lib/supabase';
 import { hasSupabase } from './config';
-import type { AppState, User, Group, GroupMember, Plan, Task, Expense, Bet, BetOption, BetWager, Message, Championship, ChampionshipEvent, Theme } from './types';
+import type { AppState, User, Group, GroupMember, Plan, Task, Expense, Bet, BetOption, BetWager, Message, Championship, ChampionshipEvent, ScoringType, Theme } from './types';
 import { pointsForPosition } from './utils';
 
 function uid(): string {
@@ -38,6 +38,7 @@ function rowToChampionship(r: any, events: ChampionshipEvent[]): Championship {
     groupId: r.group_id,
     name: r.name,
     description: r.description ?? undefined,
+    scoringType: r.scoring_type === 'times' ? 'times' : 'points',
     pointsSystem: Array.isArray(r.points_system) ? r.points_system.map(Number) : [25, 18, 15, 12, 10, 8, 6, 4, 2, 1],
     createdAt: new Date(r.created_at).getTime(),
     createdBy: r.created_by ?? '',
@@ -103,11 +104,11 @@ interface Actions {
   deleteMessage: (id: string) => void;
 
   // championships
-  createChampionship: (groupId: string, name: string, description: string | undefined, pointsSystem: number[]) => Championship;
+  createChampionship: (groupId: string, name: string, description: string | undefined, scoringType: ScoringType, pointsSystem: number[]) => Championship;
   deleteChampionship: (id: string) => void;
   addChampionshipEvent: (championshipId: string, name: string, date?: number) => ChampionshipEvent;
   deleteChampionshipEvent: (championshipId: string, eventId: string) => void;
-  setEventResults: (championshipId: string, eventId: string, entries: { userId: string; position: number }[]) => void;
+  setEventResults: (championshipId: string, eventId: string, entries: { userId: string; position?: number; timeMs?: number }[]) => void;
 }
 
 export const useStore = create<AppState & Actions>()(
@@ -232,7 +233,7 @@ export const useStore = create<AppState & Actions>()(
                   createdAt: new Date(e.created_at).getTime(),
                   results: results
                     .filter((r: any) => r.event_id === e.id)
-                    .map((r: any) => ({ userId: r.user_id, position: r.position, points: r.points })),
+                    .map((r: any) => ({ userId: r.user_id, position: r.position, points: r.points, timeMs: r.time_ms ?? undefined })),
                 }))
             )
           );
@@ -634,7 +635,7 @@ export const useStore = create<AppState & Actions>()(
         },
 
         // ----- championships -----
-        createChampionship: (groupId, name, description, pointsSystem) => {
+        createChampionship: (groupId, name, description, scoringType, pointsSystem) => {
           const cu = get().currentUser;
           const id = uid();
           const c: Championship = {
@@ -642,6 +643,7 @@ export const useStore = create<AppState & Actions>()(
             groupId,
             name,
             description,
+            scoringType,
             pointsSystem,
             createdAt: Date.now(),
             createdBy: cu?.id ?? '',
@@ -656,6 +658,7 @@ export const useStore = create<AppState & Actions>()(
                 group_id: groupId,
                 name,
                 description: description ?? null,
+                scoring_type: scoringType,
                 points_system: pointsSystem,
                 created_by: cu?.id ?? null,
               })
@@ -723,11 +726,18 @@ export const useStore = create<AppState & Actions>()(
           const championship = get().championships.find((c) => c.id === championshipId);
           if (!championship) return;
           const system = championship.pointsSystem;
-          const results = entries.map((e) => ({
-            userId: e.userId,
-            position: e.position,
-            points: pointsForPosition(system, e.position),
-          }));
+          let results: { userId: string; position: number; points: number; timeMs?: number }[];
+          if (championship.scoringType === 'times') {
+            const sorted = [...entries].sort((a, b) => (a.timeMs ?? Number.MAX_SAFE_INTEGER) - (b.timeMs ?? Number.MAX_SAFE_INTEGER));
+            results = sorted.map((e, i) => ({ userId: e.userId, position: i + 1, points: 0, timeMs: e.timeMs }));
+          } else {
+            results = entries.map((e) => ({
+              userId: e.userId,
+              position: e.position ?? 0,
+              points: pointsForPosition(system, e.position ?? 0),
+              timeMs: undefined,
+            }));
+          }
           set((s) => ({
             championships: s.championships.map((c) =>
               c.id === championshipId
@@ -744,6 +754,7 @@ export const useStore = create<AppState & Actions>()(
               user_id: r.userId,
               position: r.position,
               points: r.points,
+              time_ms: r.timeMs ?? null,
             }));
             (async () => {
               const { error: delError } = await supabase!

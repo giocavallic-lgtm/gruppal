@@ -323,6 +323,7 @@ create table if not exists public.championships (
   group_id uuid not null references public.groups(id) on delete cascade,
   name text not null,
   description text,
+  scoring_type text not null default 'points',
   points_system jsonb not null default '[25,18,15,12,10,8,6,4,2,1]'::jsonb,
   created_by uuid references public.profiles(id) on delete set null,
   created_at timestamptz default now()
@@ -363,6 +364,7 @@ create table if not exists public.championship_results (
   user_id uuid not null references public.profiles(id) on delete cascade,
   position integer not null check (position > 0),
   points integer not null default 0,
+  time_ms bigint,
   primary key (event_id, user_id)
 );
 alter table public.championship_results enable row level security;
