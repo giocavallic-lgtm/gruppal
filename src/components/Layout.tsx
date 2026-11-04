@@ -16,9 +16,9 @@ export default function Layout() {
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="app-header">
-        <div className="mx-auto flex w-full max-w-2xl items-center justify-between px-4 py-2.5">
-          <span className="text-[17px] font-semibold tracking-tight text-zinc-100">Crewzy</span>
-          <div className="flex items-center gap-2">
+        <div className="mx-auto flex w-full max-w-2xl items-center gap-2 px-4 py-2.5">
+          <span className="shrink-0 text-[17px] font-semibold tracking-tight text-zinc-100">Crewzy</span>
+          <div className="ms-auto flex shrink-0 items-center gap-2">
             <div
               className="flex items-center gap-1.5 rounded-full bg-zinc-800/70 px-2.5 py-1 ring-1 ring-zinc-700/50"
               title="Tus Crewzys"
