@@ -108,7 +108,7 @@ function Terms() {
 
       <section className="space-y-2">
         <h3 className="font-semibold text-zinc-200">9. Contacto</h3>
-        <p>Para consultas: giocavallic@gmail.com</p>
+        <p>Para consultas: contacto a través de los canales oficiales de la app.</p>
       </section>
     </article>
   );
@@ -123,7 +123,7 @@ function Privacy() {
       <section className="space-y-2">
         <h3 className="font-semibold text-zinc-200">1. Responsable</h3>
         <p>
-          El responsable del tratamiento es el titular de la app Crewzy (giocavallic@gmail.com). Los datos se
+          El responsable del tratamiento es el titular de la app Crewzy. Los datos se
           alojan en Supabase (región UE, eu-west-1).
         </p>
       </section>
@@ -153,7 +153,7 @@ function Privacy() {
         <h3 className="font-semibold text-zinc-200">5. Conservación</h3>
         <p>
           Los datos se conservan mientras la cuenta esté activa. Puedes solicitar la eliminación de tu cuenta
-          y datos escribiendo a giocavallic@gmail.com.
+          y datos escribiendo al correo de contacto indicado en la app.
         </p>
       </section>
 
@@ -161,7 +161,7 @@ function Privacy() {
         <h3 className="font-semibold text-zinc-200">6. Derechos</h3>
         <p>
           Tienes derecho de acceso, rectificación, supresión, limitación, portabilidad y oposición. Para
-          ejercerlos, contacta con giocavallic@gmail.com.
+          ejercerlos, contacta a través de los canales oficiales de la app.
         </p>
       </section>
 
