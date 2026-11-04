@@ -57,10 +57,10 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   };
 
   return (
-    <div className="card flex flex-col gap-3 p-3">
+    <div className="card flex min-h-0 flex-1 flex-col gap-3 p-3">
       <div
         ref={listRef}
-        className="flex h-[52dvh] flex-col gap-1.5 overflow-y-auto pe-1"
+        className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pe-1"
         aria-live="polite"
       >
         {messages.length === 0 && (

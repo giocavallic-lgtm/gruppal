@@ -9,8 +9,8 @@ export default function Layout() {
   const cu = useStore((s) => s.currentUser)!;
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="app-header">
+    <div className="flex h-dvh flex-col overflow-hidden">
+      <header className="app-header shrink-0">
         <div className="mx-auto flex w-full max-w-2xl items-center gap-2 px-4 py-2.5">
           <button
             type="button"
@@ -50,9 +50,9 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="app-main mx-auto w-full max-w-2xl flex-1 px-4 pt-5">
+      <main className="app-main mx-auto flex w-full max-w-2xl min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-5">
         <Suspense fallback={<PageLoader />}>
-          <div key={loc.pathname} className="page-in">
+          <div key={loc.pathname} className="page-in flex min-h-0 flex-1 flex-col">
             <Outlet />
           </div>
         </Suspense>
