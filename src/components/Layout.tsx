@@ -19,6 +19,9 @@ export default function Layout() {
         <div className="mx-auto flex w-full max-w-2xl items-center justify-between px-4 py-2.5 relative">
           <div className="flex items-center gap-2">
             <span className="text-[17px] font-semibold tracking-tight text-zinc-100">Crewzy</span>
+            <div className="absolute left-0 -mt-2 flex items-center gap-1">
+              <Gift className="h-5 w-5 text-zinc-500" />
+            </div>
           </div>
           <button
             type="button"
@@ -36,9 +39,6 @@ export default function Layout() {
               <div className="flex items-center justify-center text-zinc-200 text-xl">{cu.name ? cu.name[0] : '?'}</div>
             )}
           </button>
-          <div className="absolute right-0 flex items-center gap-0">
-            <Gift className="h-5 w-5 text-zinc-500" />
-          </div>
         </div>
       </header>
 
