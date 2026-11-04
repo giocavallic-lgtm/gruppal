@@ -1,4 +1,4 @@
-import { lazy, useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useStore } from './store';
 import { hasSupabase } from './config';
@@ -73,29 +73,37 @@ export default function App() {
   }
 
   return (
-    <Routes>
-      <Route element={<Layout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/groups/:id" element={<GroupDetail />} />
-        <Route path="/plans/:id" element={<PlanDetail />} />
-        <Route path="/championships/:id" element={<ChampionshipDetail />} />
-        <Route path="/groups/:id/bets" element={<Bets />} />
-        <Route path="/bets/:id" element={<BetDetail />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/legal" element={<Legal />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Route>
-    </Routes>
+    <Suspense fallback={<Splash />}>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/groups/:id" element={<GroupDetail />} />
+          <Route path="/plans/:id" element={<PlanDetail />} />
+          <Route path="/championships/:id" element={<ChampionshipDetail />} />
+          <Route path="/groups/:id/bets" element={<Bets />} />
+          <Route path="/bets/:id" element={<BetDetail />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/legal" element={<Legal />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }
 
 function Splash() {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-4">
-      <div className="splash-mark flex h-16 w-16 items-center justify-center rounded-[18px] bg-zinc-200 text-3xl font-bold text-zinc-900 shadow-lg">
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-5">
+      <div className="splash-mark flex h-20 w-20 items-center justify-center rounded-[22px] bg-zinc-200 text-4xl font-bold text-zinc-900 shadow-lg">
         C
       </div>
-      <span className="text-sm text-zinc-500">Cargando…</span>
+      <div className="flex flex-col items-center gap-2">
+        <span className="text-lg font-semibold tracking-tight text-zinc-100">Crewzy</span>
+        <span className="text-sm text-zinc-500">Cargando…</span>
+      </div>
+      <div className="mt-2 h-1 w-24 overflow-hidden rounded-full bg-zinc-800">
+        <div className="h-full w-1/3 animate-pulse rounded-full bg-zinc-400" />
+      </div>
     </div>
   );
 }
