@@ -384,7 +384,12 @@ export const useStore = create<AppState & Actions>()(
           set((s) => {
             const users = s.users.map((u) => (u.id === id ? { ...u, ...patch } : u));
             const currentUser = s.currentUser && s.currentUser.id === id ? { ...s.currentUser, ...patch } : s.currentUser;
-            if (cloud && supabase) supabase.from('profiles').update({ name: patch.name }).eq('id', id).then(() => {});
+            if (cloud && supabase) {
+              const row: any = {};
+              if (patch.name !== undefined) row.name = patch.name;
+              if (patch.avatar !== undefined) row.avatar = patch.avatar;
+              if (Object.keys(row).length) supabase.from('profiles').update(row).eq('id', id).then(() => {});
+            }
             return { users, currentUser };
           }),
 

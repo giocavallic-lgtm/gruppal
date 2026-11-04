@@ -148,12 +148,8 @@ export default function Profile() {
     reader.onload = () => {
       const avatar = reader.result as string;
       if (mode === 'cloud') {
-        const supabase = (useStore.getState() as any).supabase;
-        if (supabase) {
-          supabase.from('profiles').update({ avatar }).eq('id', currentUser.id).then(() => {
-            setNameMsg('Foto actualizada');
-          });
-        }
+        updateUser(currentUser.id, { avatar });
+        setNameMsg('Foto actualizada');
       } else {
         setNameMsg('Foto guardada localmente');
         setCurrentUser({ ...currentUser, avatar });
@@ -470,7 +466,7 @@ export default function Profile() {
         <div className="card space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-zinc-400">Versión</span>
-            <span className="font-mono text-xs text-zinc-500">3.3.5</span>
+            <span className="font-mono text-xs text-zinc-500">4.1.2</span>
           </div>
           <a
             href="https://github.com/giocavallic-lgtm/gruppal"
