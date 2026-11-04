@@ -1,32 +1,58 @@
-import { useEffect } from 'react';
+import { lazy, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useStore } from './store';
 import { hasSupabase } from './config';
 import Layout from './components/Layout';
 import Onboarding from './pages/Onboarding';
 import Auth from './pages/Auth';
-import Home from './pages/Home';
-import GroupDetail from './pages/GroupDetail';
-import PlanDetail from './pages/PlanDetail';
-import Bets from './pages/Bets';
-import BetDetail from './pages/BetDetail';
-import Profile from './pages/Profile';
+
+const Home = lazy(() => import('./pages/Home'));
+const GroupDetail = lazy(() => import('./pages/GroupDetail'));
+const PlanDetail = lazy(() => import('./pages/PlanDetail'));
+const Bets = lazy(() => import('./pages/Bets'));
+const BetDetail = lazy(() => import('./pages/BetDetail'));
+const Profile = lazy(() => import('./pages/Profile'));
 
 export default function App() {
   const initAuth = useStore((s) => s.initAuth);
   const authLoading = useStore((s) => s.authLoading);
   const session = useStore((s) => s.session);
   const currentUser = useStore((s) => s.currentUser);
+  const theme = useStore((s) => s.theme);
+  const reduceMotion = useStore((s) => s.reduceMotion);
 
-  useEffect(() => { initAuth(); }, [initAuth]);
+  useEffect(() => {
+    initAuth();
+  }, [initAuth]);
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-zinc-400">Cargando...</div>
-      </div>
-    );
-  }
+  // Apply the saved theme (system / light / dark) to the document.
+  useEffect(() => {
+    const root = document.documentElement;
+    const media = window.matchMedia('(prefers-color-scheme: light)');
+
+    const apply = () => {
+      const resolved = theme === 'system' ? (media.matches ? 'light' : 'dark') : theme;
+      root.dataset.theme = resolved;
+      document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute('content', resolved === 'light' ? '#f2f2f5' : '#0a0a0b');
+      document
+        .querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
+        ?.setAttribute('content', resolved === 'light' ? 'default' : 'black-translucent');
+    };
+
+    apply();
+    if (theme === 'system') {
+      media.addEventListener('change', apply);
+      return () => media.removeEventListener('change', apply);
+    }
+  }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('reduce-motion', reduceMotion);
+  }, [reduceMotion]);
+
+  if (authLoading) return <Splash />;
 
   // Cloud mode
   if (hasSupabase) {
@@ -56,5 +82,16 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" />} />
       </Route>
     </Routes>
+  );
+}
+
+function Splash() {
+  return (
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-4">
+      <div className="splash-mark flex h-16 w-16 items-center justify-center rounded-[18px] bg-zinc-200 text-3xl font-bold text-zinc-900 shadow-lg">
+        C
+      </div>
+      <span className="text-sm text-zinc-500">Cargando…</span>
+    </div>
   );
 }

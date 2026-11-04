@@ -1,9 +1,12 @@
 export type ID = string;
 
+export type Theme = 'system' | 'dark' | 'light';
+
 export interface User {
   id: ID;
   name: string;
   avatar?: string;
+  coins?: number; // app internal coin balance
   createdAt: number;
 }
 

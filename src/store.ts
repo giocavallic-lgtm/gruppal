@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from './lib/supabase';
 import { hasSupabase } from './config';
-import type { AppState, User, Group, GroupMember, Plan, Task, Expense, Bet, BetOption, BetWager } from './types';
+import type { AppState, User, Group, GroupMember, Plan, Task, Expense, Bet, BetOption, BetWager, Theme } from './types';
 
 function uid(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
@@ -38,6 +38,15 @@ interface Actions {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
+  signOutEverywhere: () => Promise<void>;
+  updateEmail: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
+
+  // preferences
+  theme: Theme;
+  reduceMotion: boolean;
+  setTheme: (theme: Theme) => void;
+  setReduceMotion: (reduceMotion: boolean) => void;
 
   // user (local mode)
   setCurrentUser: (u: User | null) => void;
@@ -210,11 +219,30 @@ export const useStore = create<AppState & Actions>()(
         session: null,
         authLoading: cloud,
         mode: cloud ? 'cloud' : 'local',
+        theme: 'system',
+        reduceMotion: false,
 
         initAuth,
         signIn,
         signUp,
         signOut,
+        signOutEverywhere: async () => {
+          if (supabase) await supabase.auth.signOut({ scope: 'global' });
+          set({ session: null, currentUser: null, users: [], groups: [], plans: [], bets: [] });
+        },
+        updateEmail: async (email) => {
+          if (!supabase) return;
+          const { error } = await supabase.auth.updateUser({ email });
+          if (error) throw error;
+        },
+        updatePassword: async (password) => {
+          if (!supabase) return;
+          const { error } = await supabase.auth.updateUser({ password });
+          if (error) throw error;
+        },
+        setTheme: (theme) => set({ theme }),
+        setReduceMotion: (reduceMotion) => set({ reduceMotion }),
+
         loadAll,
         joinGroupByCode,
 

@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Home as HomeIcon, User } from 'lucide-react';
 import { useStore } from '../store';
@@ -13,34 +14,70 @@ export default function Layout() {
   ];
 
   return (
-    <div className="min-h-full flex flex-col">
-      <header className="sticky top-0 z-20 bg-zinc-950/80 backdrop-blur border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-zinc-200 text-zinc-900 flex items-center justify-center font-bold">C</div>
-          <span className="font-semibold text-zinc-100">Crewzy</span>
+    <div className="flex min-h-dvh flex-col">
+      <header className="app-header">
+        <div className="mx-auto flex w-full max-w-2xl items-center justify-between px-4 py-2.5">
+          <button
+            type="button"
+            onClick={() => nav('/')}
+            className="flex items-center gap-2.5 transition active:scale-95"
+            aria-label="Ir al inicio"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-zinc-200 text-[17px] font-bold text-zinc-900 shadow-sm">
+              C
+            </div>
+            <span className="text-[17px] font-semibold tracking-tight text-zinc-100">Crewzy</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => nav('/profile')}
+            aria-label="Abrir perfil"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-800 text-sm font-semibold text-zinc-200 ring-1 ring-zinc-700/60 transition active:scale-95"
+          >
+            {cu.name[0]?.toUpperCase() ?? '?'}
+          </button>
         </div>
-        <div className="text-sm text-zinc-400">{cu.name}</div>
       </header>
-      <main className="flex-1 pb-20 px-4 py-4 max-w-2xl mx-auto w-full">
-        <Outlet />
+
+      <main className="app-main mx-auto w-full max-w-2xl flex-1 px-4 pt-5">
+        <Suspense fallback={<PageLoader />}>
+          <div key={loc.pathname} className="page-in">
+            <Outlet />
+          </div>
+        </Suspense>
       </main>
-      <nav className="fixed bottom-0 inset-x-0 z-20 bg-zinc-950/90 backdrop-blur border-t border-zinc-800">
-        <div className="max-w-2xl mx-auto flex">
+
+      <nav className="app-nav" aria-label="Navegación principal">
+        <div className="mx-auto flex w-full max-w-md items-stretch gap-1 px-3 py-1.5">
           {tabs.map((t) => {
-            const active = loc.pathname === t.path;
+            const active = t.path === '/' ? loc.pathname === '/' : loc.pathname.startsWith(t.path);
             return (
               <button
                 key={t.path}
+                type="button"
                 onClick={() => nav(t.path)}
-                className={`flex-1 flex flex-col items-center py-2 text-xs ${active ? 'text-zinc-100' : 'text-zinc-500'}`}
+                aria-current={active ? 'page' : undefined}
+                className={`flex flex-1 flex-col items-center gap-0.5 rounded-2xl py-1 text-[10px] font-medium transition active:scale-95 ${
+                  active ? 'text-zinc-100' : 'text-zinc-500'
+                }`}
               >
-                <t.icon size={20} />
+                <span className={`nav-pill ${active ? 'nav-pill-active' : ''}`}>
+                  <t.icon size={21} strokeWidth={active ? 2.4 : 2} />
+                </span>
                 {t.label}
               </button>
             );
           })}
         </div>
       </nav>
+    </div>
+  );
+}
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center py-20">
+      <span className="page-spinner" />
     </div>
   );
 }
