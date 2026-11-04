@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store';
 import Toggle from '../components/Toggle';
+import PageHeader from '../components/PageHeader';
 
 export default function Profile() {
   const currentUser = useStore((s) => s.currentUser)!;
@@ -150,10 +151,7 @@ export default function Profile() {
 
   return (
     <div className="space-y-7">
-      <div>
-        <h1 className="text-[28px] font-bold tracking-tight text-zinc-100">Ajustes</h1>
-        <p className="mt-1 text-sm text-zinc-500">Cuenta, apariencia y preferencias</p>
-      </div>
+      <PageHeader title="Ajustes" subtitle="Cuenta, apariencia y preferencias" backTo="/" />
 
       {/* Cuenta */}
       <section className="space-y-3">
