@@ -36,7 +36,7 @@ export default function Layout() {
               <div className="flex items-center justify-center text-zinc-200 text-xl">{cu.name ? cu.name[0] : '?'}</div>
             )}
           </button>
-          <div className="absolute right-0 start-0 flex items-center gap-2 px-2">
+          <div className="absolute right-0 flex items-center gap-0">
             <Gift className="h-5 w-5 text-zinc-500" />
           </div>
         </div>
