@@ -292,12 +292,12 @@ body {
 }
 
 .app-main {
-  padding-bottom: calc(6.5rem + var(--safe-bottom));
+  padding-bottom: calc(1.5rem + var(--safe-bottom));
 }
 
 @media (min-width: 640px) {
   .app-main {
-    padding-bottom: 6rem;
+    padding-bottom: 1.5rem;
   }
 }
 

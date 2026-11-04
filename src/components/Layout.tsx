@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Home as HomeIcon, User, Coins } from 'lucide-react';
+import { Coins } from 'lucide-react';
 import { useStore } from '../store';
 
 export default function Layout() {
@@ -8,16 +8,18 @@ export default function Layout() {
   const loc = useLocation();
   const cu = useStore((s) => s.currentUser)!;
 
-  const tabs = [
-    { path: '/', icon: HomeIcon, label: 'Inicio' },
-    { path: '/profile', icon: User, label: 'Perfil' },
-  ];
-
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="app-header">
         <div className="mx-auto flex w-full max-w-2xl items-center gap-2 px-4 py-2.5">
-          <span className="shrink-0 text-[17px] font-semibold tracking-tight text-zinc-100">Crewzy</span>
+          <button
+            type="button"
+            onClick={() => nav('/')}
+            aria-label="Ir al inicio"
+            className="shrink-0 rounded-lg px-1 py-0.5 text-[17px] font-semibold tracking-tight text-zinc-100 transition active:scale-95"
+          >
+            Crewzy
+          </button>
           <div className="ms-auto flex shrink-0 items-center gap-2">
             <div
               className="flex items-center gap-1.5 rounded-full bg-zinc-800/70 px-2.5 py-1 ring-1 ring-zinc-700/50"
@@ -55,30 +57,6 @@ export default function Layout() {
           </div>
         </Suspense>
       </main>
-
-      <nav className="app-nav" aria-label="Navegación principal">
-        <div className="mx-auto flex w-full max-w-md items-stretch gap-1 px-3 py-1.5">
-          {tabs.map((t) => {
-            const active = t.path === '/' ? loc.pathname === '/' : loc.pathname.startsWith(t.path);
-            return (
-              <button
-                key={t.path}
-                type="button"
-                onClick={() => nav(t.path)}
-                aria-current={active ? 'page' : undefined}
-                className={`flex flex-1 flex-col items-center gap-0.5 rounded-2xl py-1 text-[10px] font-medium transition active:scale-95 ${
-                  active ? 'text-zinc-100' : 'text-zinc-500'
-                }`}
-              >
-                <span className={`nav-pill ${active ? 'nav-pill-active' : ''}`}>
-                  <t.icon size={21} strokeWidth={active ? 2.4 : 2} />
-                </span>
-                {t.label}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
     </div>
   );
 }

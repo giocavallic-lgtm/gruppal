@@ -1,7 +1,8 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Reply, X } from 'lucide-react';
 import { useStore } from '../store';
+import type { Message } from '../types';
 
 function dayLabel(ts: number) {
   const d = new Date(ts);
@@ -30,19 +31,29 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   );
 
   const [text, setText] = useState('');
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages.length, groupId]);
 
+  const nameOf = (userId: string) => users.find((u) => u.id === userId)?.name ?? 'Usuario';
+
+  const startReply = (m: Message) => {
+    setReplyTo(m);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const body = text.trim();
     if (!body) return;
-    sendMessage(groupId, body);
+    sendMessage(groupId, body, replyTo?.id);
     setText('');
+    setReplyTo(null);
   };
 
   return (
@@ -64,6 +75,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
           const author = users.find((u) => u.id === m.userId);
           const day = dayLabel(m.createdAt);
           const showDay = i === 0 || day !== dayLabel(messages[i - 1].createdAt);
+          const quoted = m.replyToId ? messages.find((x) => x.id === m.replyToId) : undefined;
           return (
             <Fragment key={m.id}>
               {showDay && (
@@ -96,11 +108,37 @@ export default function GroupChat({ groupId }: { groupId: string }) {
                         : 'rounded-bl-md bg-zinc-800 text-zinc-100'
                     }`}
                   >
+                    {m.replyToId && (
+                      <div
+                        className={`mb-1.5 rounded-lg border-s-2 px-2 py-1 text-[11px] ${
+                          mine
+                            ? 'border-zinc-500/60 bg-zinc-900/10 text-zinc-700'
+                            : 'border-zinc-500/60 bg-white/5 text-zinc-300'
+                        }`}
+                      >
+                        <p className="font-semibold">
+                          {quoted ? nameOf(quoted.userId) : 'Mensaje'}
+                        </p>
+                        <p className="line-clamp-2 break-words opacity-80">
+                          {quoted ? quoted.body : 'Mensaje no disponible'}
+                        </p>
+                      </div>
+                    )}
                     <p className="whitespace-pre-wrap break-words">{m.body}</p>
                   </div>
-                  <span className="mt-0.5 px-1 text-[10px] tabular-nums text-zinc-600">
-                    {timeLabel(m.createdAt)}
-                  </span>
+                  <div className={`mt-0.5 flex items-center gap-1 ${mine ? 'flex-row-reverse' : ''}`}>
+                    <span className="px-1 text-[10px] tabular-nums text-zinc-600">
+                      {timeLabel(m.createdAt)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => startReply(m)}
+                      aria-label={`Responder a ${author?.name ?? 'este mensaje'}`}
+                      className="rounded-full p-0.5 text-zinc-600 opacity-70 transition hover:bg-zinc-800 hover:text-zinc-300 hover:opacity-100 active:scale-90"
+                    >
+                      <Reply size={12} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </Fragment>
@@ -108,12 +146,32 @@ export default function GroupChat({ groupId }: { groupId: string }) {
         })}
       </div>
 
+      {replyTo && (
+        <div className="flex items-center gap-2 rounded-xl border-s-2 border-zinc-500 bg-zinc-800/60 px-2.5 py-1.5">
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold text-zinc-300">
+              Respondiendo a {nameOf(replyTo.userId)}
+            </p>
+            <p className="truncate text-[11px] text-zinc-500">{replyTo.body}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setReplyTo(null)}
+            aria-label="Cancelar respuesta"
+            className="rounded-full p-1 text-zinc-400 transition hover:bg-zinc-700 hover:text-zinc-100"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       <form onSubmit={submit} className="flex items-center gap-2">
         <input
+          ref={inputRef}
           className="input flex-1"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Escribe un mensaje…"
+          placeholder={replyTo ? `Responder a ${nameOf(replyTo.userId)}…` : 'Escribe un mensaje…'}
           maxLength={2000}
           autoComplete="off"
           aria-label="Nuevo mensaje"

@@ -93,6 +93,7 @@ export interface Message {
   groupId: ID;
   userId: ID;
   body: string;
+  replyToId?: ID;
   createdAt: number;
 }
 

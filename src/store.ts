@@ -29,7 +29,7 @@ function rowToBet(r: any, options: BetOption[], wagers: BetWager[]): Bet {
   return { id: r.id, groupId: r.group_id, title: r.title, description: r.description ?? undefined, targetUserId: r.target_user_id, options, wagers, status: r.status, winningOptionId: r.winning_option_id ?? undefined, createdAt: new Date(r.created_at).getTime(), createdBy: r.created_by ?? '', resolvedAt: r.resolved_at ? new Date(r.resolved_at).getTime() : undefined };
 }
 function rowToMessage(r: any): Message {
-  return { id: r.id, groupId: r.group_id, userId: r.user_id, body: r.body, createdAt: new Date(r.created_at).getTime() };
+  return { id: r.id, groupId: r.group_id, userId: r.user_id, body: r.body, replyToId: r.reply_to_id ?? undefined, createdAt: new Date(r.created_at).getTime() };
 }
 
 interface Actions {
@@ -86,7 +86,7 @@ interface Actions {
   deleteBet: (betId: string) => void;
 
   // chat
-  sendMessage: (groupId: string, body: string) => Message | undefined;
+  sendMessage: (groupId: string, body: string, replyToId?: string) => Message | undefined;
   deleteMessage: (id: string) => void;
 }
 
@@ -465,16 +465,16 @@ export const useStore = create<AppState & Actions>()(
         },
 
         // ----- chat -----
-        sendMessage: (groupId, body) => {
+        sendMessage: (groupId, body, replyToId) => {
           const cu = get().currentUser;
           const text = body.trim();
           if (!cu || !text) return undefined;
-          const m: Message = { id: uid(), groupId, userId: cu.id, body: text, createdAt: Date.now() };
+          const m: Message = { id: uid(), groupId, userId: cu.id, body: text, replyToId, createdAt: Date.now() };
           set((s) => ({ messages: [...s.messages, m] }));
           if (cloud && supabase) {
             supabase
               .from('messages')
-              .insert({ id: m.id, group_id: groupId, user_id: cu.id, body: text })
+              .insert({ id: m.id, group_id: groupId, user_id: cu.id, body: text, reply_to_id: replyToId ?? null })
               .then(({ error }) => {
                 if (error) {
                   console.error(error);

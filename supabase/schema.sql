@@ -86,8 +86,10 @@ create table if not exists public.messages (
   group_id uuid not null references public.groups(id) on delete cascade,
   user_id uuid not null references public.profiles(id) on delete cascade,
   body text not null check (char_length(body) between 1 and 2000),
+  reply_to_id uuid references public.messages(id) on delete set null,
   created_at timestamptz not null default now()
 );
+alter table public.messages add column if not exists reply_to_id uuid references public.messages(id) on delete set null;
 alter table public.messages enable row level security;
 
 drop policy if exists "messages_read_members" on public.messages;
