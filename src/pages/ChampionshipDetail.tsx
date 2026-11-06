@@ -340,6 +340,12 @@ export default function ChampionshipDetail() {
                     placeholder="segundos"
                     aria-label={`Tiempo de ${m.name}`}
                   />
+                  <div className="mt-2 text-xs text-zinc-400">
+                    <span>h:</span> <span className="font-medium text-zinc-200">{Math.floor(parseInt(raw) / 3600)}</span>
+                    <span>min:</span> <span className="font-medium text-zinc-200">{Math.floor((parseInt(raw) % 3600) / 60)}</span>
+                    <span>seg:</span> <span className="font-medium text-zinc-200">{parseInt(raw) % 60}</span>
+                    <span>ms:</span> <span className="font-medium text-zinc-200">{(parseInt(raw) % 1) * 1000 | 0}</span>
+                  </div>
                 </div>
               );
             }
