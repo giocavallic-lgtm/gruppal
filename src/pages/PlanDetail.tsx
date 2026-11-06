@@ -105,6 +105,12 @@ export default function PlanDetail() {
             type="button"
             onClick={() => {
               if (confirm('¿Eliminar plan?')) {
+                const isOwner = currentUser?.id === group?.ownerId;
+                const isAdmin = group?.members?.some((m) => m.userId === currentUser?.id && m.role === 'admin');
+                if (!isOwner && !isAdmin) {
+                  alert('Solo el creador del grupo o un administrador pueden eliminar planes.');
+                  return;
+                }
                 deletePlan(plan.id);
                 nav(`/groups/${group.id}`);
               }

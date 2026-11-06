@@ -12,6 +12,7 @@ export default function ChampionshipDetail() {
   const championship = useStore((s) => s.championships.find((c) => c.id === id));
   const groups = useStore((s) => s.groups);
   const users = useStore((s) => s.users);
+  const currentUser = useStore((s) => s.currentUser);
   const addEvent = useStore((s) => s.addChampionshipEvent);
   const deleteEvent = useStore((s) => s.deleteChampionshipEvent);
   const deleteChampionship = useStore((s) => s.deleteChampionship);
@@ -97,6 +98,13 @@ export default function ChampionshipDetail() {
 
   const handleDeleteChampionship = () => {
     if (confirm('¿Eliminar este campeonato y todas sus pruebas?')) {
+      const g = group; // already computed above from groups.find
+      const isOwner = currentUser?.id === g?.ownerId;
+      const isAdmin = g?.members?.some((m) => m.userId === currentUser?.id && m.role === 'admin');
+      if (!isOwner && !isAdmin) {
+        alert('Solo el creador del grupo o un administrador pueden eliminar campeonatos.');
+        return;
+      }
       deleteChampionship(championship.id);
       nav(`/groups/${championship.groupId}`);
     }
@@ -309,7 +317,7 @@ export default function ChampionshipDetail() {
         <div className="space-y-3">
           <p className="text-xs leading-relaxed text-zinc-500">
             {isTimes
-              ? 'Introduce el tiempo de cada participante (en segundos). Deja vacío si no participó. La posición se calcula sola.'
+              ? 'Introduce el tiempo de cada participante. Usa horas, minutos, segundos y milisegundos.'
               : 'Pon la posición de llegada de cada participante. Deja vacío si no participó. Los puntos se calculan solos.'}
           </p>
           {members.map((m) => {
