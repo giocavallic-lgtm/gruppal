@@ -153,7 +153,7 @@ export default function ChampionshipDetail() {
         action={
           <button
             type="button"
-            onClick={handleDeleteChampionship}
+            onClick={(e) => { e.preventDefault(); handleDeleteChampionship(); }}
             aria-label="Eliminar campeonato"
             className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 transition hover:bg-red-500/10 hover:text-red-400 active:scale-95"
           >
@@ -265,7 +265,7 @@ export default function ChampionshipDetail() {
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-2">
           <h2 className="section-title">Pruebas</h2>
-          <button className="btn btn-secondary px-3 py-1.5 text-xs" onClick={() => setEventOpen(true)} type="button">
+          <button className="btn btn-secondary px-3 py-1.5 text-xs" onClick={(e) => { e.preventDefault(); setEventOpen(true); }} type="button">
             <Plus size={14} /> Añadir
           </button>
         </div>
@@ -300,11 +300,7 @@ export default function ChampionshipDetail() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (confirm('¿Eliminar esta prueba y sus resultados?')) {
-                      deleteEvent(championship.id, event.id);
-                    }
-                  }}
+                  onClick={(e) => { e.preventDefault(); if (confirm('¿Eliminar esta prueba y sus resultados?')) { deleteEvent(championship.id, event.id); } }}
                   aria-label="Eliminar prueba"
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-zinc-500 transition hover:bg-red-500/10 hover:text-red-400 active:scale-95"
                 >
@@ -324,7 +320,7 @@ export default function ChampionshipDetail() {
                   })}
                 </div>
               )}
-              <button className="btn btn-secondary w-full text-xs" onClick={() => openResults(event.id)} type="button">
+              <button className="btn btn-secondary w-full text-xs" onClick={(e) => { e.preventDefault(); openResults(event.id); }} type="button">
                 {event.results.length > 0 ? 'Editar resultados' : 'Añadir resultados'}
               </button>
             </div>
@@ -358,7 +354,7 @@ export default function ChampionshipDetail() {
             />
             <p className="text-[10px] text-zinc-500 mt-1">Ej: 3 para 3 tandas del rally. La app sumará los tiempos.</p>
           </div>
-          <button className="btn btn-primary w-full py-3" onClick={handleAddEvent} disabled={!eventName.trim()} type="button">
+          <button className="btn btn-primary w-full py-3" onClick={(e) => { e.preventDefault(); handleAddEvent(); }} disabled={!eventName.trim()} type="button">
             Añadir prueba
           </button>
         </div>
@@ -457,7 +453,7 @@ export default function ChampionshipDetail() {
               </div>
             );
           })}
-          <button className="btn btn-primary w-full py-3" onClick={handleSaveResults} type="button">
+          <button className="btn btn-primary w-full py-3" onClick={(e) => { e.preventDefault(); handleSaveResults(); }} type="button">
             Guardar resultados
           </button>
         </div>
