@@ -106,9 +106,9 @@ interface Actions {
   // championships
   createChampionship: (groupId: string, name: string, description: string | undefined, scoringType: ScoringType, pointsSystem: number[]) => Championship;
   deleteChampionship: (id: string) => void;
-  addChampionshipEvent: (championshipId: string, name: string, date?: number) => ChampionshipEvent;
+  addChampionshipEvent: (championshipId: string, name: string, date?: number, tandas?: number) => ChampionshipEvent;
   deleteChampionshipEvent: (championshipId: string, eventId: string) => void;
-  setEventResults: (championshipId: string, eventId: string, entries: { userId: string; position?: number; timeMs?: number }[]) => void;
+  setEventResults: (championshipId: string, eventId: string, entries: { userId: string; position?: number; timeMs?: number; tandaTimes?: number[] }[]) => void;
 }
 
 export const useStore = create<AppState & Actions>()(
@@ -230,10 +230,11 @@ export const useStore = create<AppState & Actions>()(
                   championshipId: e.championship_id,
                   name: e.name,
                   date: e.date ?? undefined,
+                  tandas: e.tandas ?? undefined,
                   createdAt: new Date(e.created_at).getTime(),
                   results: results
                     .filter((r: any) => r.event_id === e.id)
-                    .map((r: any) => ({ userId: r.user_id, position: r.position, points: r.points, timeMs: r.time_ms ?? undefined })),
+                    .map((r: any) => ({ userId: r.user_id, position: r.position, points: r.points, timeMs: r.time_ms ?? undefined, tandaTimes: r.tanda_times ? JSON.parse(r.tanda_times) : undefined })),
                 }))
             )
           );
@@ -682,12 +683,13 @@ export const useStore = create<AppState & Actions>()(
           if (cloud && supabase) supabase.from('championships').delete().eq('id', id).then(() => {});
         },
 
-        addChampionshipEvent: (championshipId, name, date) => {
+        addChampionshipEvent: (championshipId, name, date, tandas) => {
           const ev: ChampionshipEvent = {
             id: uid(),
             championshipId,
             name,
             date,
+            tandas,
             createdAt: Date.now(),
             results: [],
           };
@@ -699,7 +701,7 @@ export const useStore = create<AppState & Actions>()(
           if (cloud && supabase) {
             supabase
               .from('championship_events')
-              .insert({ id: ev.id, championship_id: championshipId, name, date: date ?? null })
+              .insert({ id: ev.id, championship_id: championshipId, name, date: date ?? null, tandas: tandas ?? null })
               .then(({ error }) => {
                 if (error) {
                   console.error(error);
@@ -733,7 +735,15 @@ export const useStore = create<AppState & Actions>()(
           const system = championship.pointsSystem;
           let results: { userId: string; position: number; points: number; timeMs?: number }[];
           if (championship.scoringType === 'times') {
-            const sorted = [...entries].sort((a, b) => (a.timeMs ?? Number.MAX_SAFE_INTEGER) - (b.timeMs ?? Number.MAX_SAFE_INTEGER));
+            // Sumar tiempos por tanda si se proporcionan
+            const entriesWithTotal = entries.map((e) => {
+              let totalMs = e.timeMs ?? 0;
+              if (e.tandaTimes?.length) {
+                totalMs = e.tandaTimes.reduce((sum, t) => sum + (t ?? 0), 0);
+              }
+              return { ...e, timeMs: totalMs > 0 ? totalMs : undefined };
+            });
+            const sorted = [...entriesWithTotal].sort((a, b) => (a.timeMs ?? Number.MAX_SAFE_INTEGER) - (b.timeMs ?? Number.MAX_SAFE_INTEGER));
             results = sorted.map((e, i) => ({ userId: e.userId, position: i + 1, points: 0, timeMs: e.timeMs }));
           } else {
             results = entries.map((e) => ({
@@ -754,13 +764,17 @@ export const useStore = create<AppState & Actions>()(
             ),
           }));
           if (cloud && supabase) {
-            const rows = results.map((r) => ({
-              event_id: eventId,
-              user_id: r.userId,
-              position: r.position,
-              points: r.points,
-              time_ms: r.timeMs ?? null,
-            }));
+            const rows = results.map((r) => {
+              const entry = entries.find((e) => e.userId === r.userId);
+              return {
+                event_id: eventId,
+                user_id: r.userId,
+                position: r.position,
+                points: r.points,
+                time_ms: r.timeMs ?? null,
+                tanda_times: entry?.tandaTimes ? JSON.stringify(entry.tandaTimes) : null,
+              };
+            });
             (async () => {
               const { error: delError } = await supabase!
                 .from('championship_results')

@@ -104,6 +104,7 @@ export interface ChampionshipResult {
   position: number;
   points: number;
   timeMs?: number;
+  tandaTimes?: number[]; // tiempos individuales por tanda
 }
 
 export interface ChampionshipEvent {
@@ -112,6 +113,7 @@ export interface ChampionshipEvent {
   name: string;
   date?: number;
   createdAt: number;
+  tandas?: number; // nº de rondas/heats (ej. 3 tandas del rally)
   results: ChampionshipResult[];
 }
 

@@ -21,12 +21,10 @@ export default function ChampionshipDetail() {
   const [eventOpen, setEventOpen] = useState(false);
   const [eventName, setEventName] = useState('');
   const [eventDate, setEventDate] = useState('');
+  const [eventTandas, setEventTandas] = useState(1);
   const [resultsEventId, setResultsEventId] = useState<string | null>(null);
   const [positions, setPositions] = useState<Record<string, string>>({});
-  const [timeH, setTimeH] = useState('0');
-  const [timeMin, setTimeMin] = useState('0');
-  const [timeS, setTimeS] = useState('0');
-  const [timeMs, setTimeMs] = useState('0');
+  const [tandaTimes, setTandaTimes] = useState<Record<string, Record<number, { h: string; min: string; s: string; ms: string }>>>({});
 
   if (!championship) {
     return <p className="py-10 text-center text-sm text-zinc-500">Campeonato no encontrado.</p>;
@@ -47,39 +45,71 @@ export default function ChampionshipDetail() {
     addEvent(
       championship.id,
       eventName.trim(),
-      eventDate ? new Date(eventDate).getTime() : undefined
+      eventDate ? new Date(eventDate).getTime() : undefined,
+      eventTandas > 1 ? eventTandas : undefined
     );
     setEventOpen(false);
     setEventName('');
     setEventDate('');
+    setEventTandas(1);
   };
 
   const openResults = (eventId: string) => {
     const ev = championship.events.find((e) => e.id === eventId);
     const posMap: Record<string, string> = {};
-    const timeMap: Record<string, string> = {};
+    const tandaMap: Record<string, Record<number, { h: string; min: string; s: string; ms: string }>> = {};
     for (const m of members) {
       const result = ev?.results.find((r) => r.userId === m.id);
       posMap[m.id] = result ? String(result.position) : '';
-      timeMap[m.id] = result?.timeMs != null ? String(result.timeMs / 1000) : '';
+      if (result?.tandaTimes?.length) {
+        tandaMap[m.id] = result.tandaTimes.reduce((acc: Record<number, { h: string; min: string; s: string; ms: string }>, t, i) => {
+          const totalMs = t;
+          const h = Math.floor(totalMs / 3600000);
+          const min = Math.floor((totalMs % 3600000) / 60000);
+          const s = Math.floor((totalMs % 60000) / 1000);
+          const ms = totalMs % 1000;
+          acc[i] = { h: String(h), min: String(min), s: String(s), ms: String(ms) };
+          return acc;
+        }, {});
+      }
     }
     setPositions(posMap);
+    setTandaTimes(tandaMap);
     setResultsEventId(eventId);
+  };
+
+  const handleTandaChange = (userId: string, tandaIdx: number, field: 'h' | 'min' | 's' | 'ms', value: string) => {
+    setTandaTimes((prev) => {
+      const userTandas = prev[userId] ?? {};
+      const current = userTandas[tandaIdx] ?? { h: '0', min: '0', s: '0', ms: '0' };
+      const updated = { ...current, [field]: value };
+      return { ...prev, [userId]: { ...userTandas, [tandaIdx]: updated } };
+    });
   };
 
   const handleSaveResults = () => {
     if (!activeEvent) return;
     if (isTimes) {
-      const h = parseInt(timeH) || 0;
-      const min = parseInt(timeMin) || 0;
-      const s = parseInt(timeS) || 0;
-      const ms = parseInt(timeMs) || 0;
-      const totalMs = h * 3600000 + min * 60000 + s * 1000 + ms;
-      const entries: { userId: string; timeMs?: number }[] = [];
+      const tandas = activeEvent.tandas ?? 1;
+      const entries: { userId: string; timeMs?: number; tandaTimes?: number[] }[] = [];
       for (const m of members) {
-        entries.push({ userId: m.id, timeMs: totalMs > 0 ? totalMs : undefined });
+        const userTandas = tandaTimes[m.id] ?? {};
+        const tandaValues: number[] = [];
+        let totalMs = 0;
+        for (let i = 0; i < tandas; i++) {
+          const t = userTandas[i];
+          if (t) {
+            const tMs = (parseInt(t.h) || 0) * 3600000 + (parseInt(t.min) || 0) * 60000 + (parseInt(t.s) || 0) * 1000 + (parseInt(t.ms) || 0);
+            tandaValues.push(tMs);
+            totalMs += tMs;
+          }
+        }
+        if (tandaValues.length > 0 || totalMs > 0) {
+          entries.push({ userId: m.id, timeMs: totalMs > 0 ? totalMs : undefined, tandaTimes: tandaValues.length > 0 ? tandaValues : undefined });
+        }
       }
       setEventResults(championship.id, activeEvent.id, entries);
+      setTandaTimes({});
       setResultsEventId(null);
       return;
     }
@@ -264,6 +294,7 @@ export default function ChampionshipDetail() {
                   <p className="truncate font-semibold text-zinc-100">{event.name}</p>
                   <p className="text-xs text-zinc-500">
                     {event.date ? formatDate(event.date) : 'Sin fecha'}
+                    {event.tandas && event.tandas > 1 ? ` · ${event.tandas} tandas` : ''}
                     {winnerName ? ` · Ganador: ${winnerName}${winnerExtra}` : ''}
                   </p>
                 </div>
@@ -311,6 +342,22 @@ export default function ChampionshipDetail() {
             <label className="label" htmlFor="event-date">Fecha <span className="normal-case tracking-normal text-zinc-600">(opcional)</span></label>
             <input id="event-date" type="date" className="input" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
           </div>
+          <div>
+            <label className="label" htmlFor="event-tandas">Tandas / rondas</label>
+            <input
+              id="event-tandas"
+              type="number"
+              min="1"
+              max="10"
+              step="1"
+              inputMode="numeric"
+              className="input"
+              value={eventTandas}
+              onChange={(e) => setEventTandas(parseInt(e.target.value) || 1)}
+              placeholder="1"
+            />
+            <p className="text-[10px] text-zinc-500 mt-1">Ej: 3 para 3 tandas del rally. La app sumará los tiempos.</p>
+          </div>
           <button className="btn btn-primary w-full py-3" onClick={handleAddEvent} disabled={!eventName.trim()}>
             Añadir prueba
           </button>
@@ -321,54 +368,65 @@ export default function ChampionshipDetail() {
         <div className="space-y-3">
           <p className="text-xs leading-relaxed text-zinc-500">
             {isTimes
-              ? 'Introduce el tiempo de cada participante. Usa horas, minutos, segundos y milisegundos.'
+              ? `Introduce el tiempo de cada participante por tanda. Usa horas, minutos, segundos y milisegundos. ${activeEvent?.tandas && activeEvent.tandas > 1 ? `Esta prueba tiene ${activeEvent.tandas} tandas.` : ''}`
               : 'Pon la posición de llegada de cada participante. Deja vacío si no participó. Los puntos se calculan solos.'}
           </p>
           {members.map((m) => {
             if (isTimes) {
-return (
+              const tandas = activeEvent?.tandas ?? 1;
+              const userTandas = tandaTimes[m.id] ?? {};
+              return (
                 <div key={m.id} className="flex items-center gap-3">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-800 text-[11px] font-semibold text-zinc-300 ring-1 ring-zinc-700/60">
                     {m.avatar ? <img src={m.avatar} alt={m.name} className="h-full w-full object-cover" /> : m.name?.[0] ?? '?'}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm text-zinc-200">{m.name}</span>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      min="0"
-                      max="23"
-                      step="1"
-                      inputMode="numeric"
-                      className="input w-6 py-1.5 text-center"
-                      onChange={(e) => setTimeH(e.target.value)}
-                    />
-                    <input
-                      type="number"
-                      min="0"
-                      max="59"
-                      step="1"
-                      inputMode="numeric"
-                      className="input w-6 py-1.5 text-center"
-                      onChange={(e) => setTimeMin(e.target.value)}
-                    />
-                    <input
-                      type="number"
-                      min="0"
-                      max="59"
-                      step="1"
-                      inputMode="numeric"
-                      className="input w-6 py-1.5 text-center"
-                      onChange={(e) => setTimeS(e.target.value)}
-                    />
-                    <input
-                      type="number"
-                      min="0"
-                      max="999"
-                      step="1"
-                      inputMode="numeric"
-                      className="input w-6 py-1.5 text-center"
-                      onChange={(e) => setTimeMs(e.target.value)}
-                    />
+                  <div className="flex gap-2 flex-wrap">
+                    {[...Array(tandas)].map((_, ti) => (
+                      <div key={ti} className="flex gap-1">
+                        <span className="text-[10px] text-zinc-500 mt-0.5">T{ti + 1}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="23"
+                          step="1"
+                          inputMode="numeric"
+                          className="input w-5 py-1 text-center text-xs"
+                          value={userTandas[ti]?.h ?? '0'}
+                          onChange={(e) => handleTandaChange(m.id, ti, 'h', e.target.value)}
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="59"
+                          step="1"
+                          inputMode="numeric"
+                          className="input w-5 py-1 text-center text-xs"
+                          value={userTandas[ti]?.min ?? '0'}
+                          onChange={(e) => handleTandaChange(m.id, ti, 'min', e.target.value)}
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="59"
+                          step="1"
+                          inputMode="numeric"
+                          className="input w-5 py-1 text-center text-xs"
+                          value={userTandas[ti]?.s ?? '0'}
+                          onChange={(e) => handleTandaChange(m.id, ti, 's', e.target.value)}
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="999"
+                          step="1"
+                          inputMode="numeric"
+                          className="input w-5 py-1 text-center text-xs"
+                          value={userTandas[ti]?.ms ?? '0'}
+                          onChange={(e) => handleTandaChange(m.id, ti, 'ms', e.target.value)}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
               );
