@@ -23,7 +23,10 @@ export default function ChampionshipDetail() {
   const [eventDate, setEventDate] = useState('');
   const [resultsEventId, setResultsEventId] = useState<string | null>(null);
   const [positions, setPositions] = useState<Record<string, string>>({});
-  const [times, setTimes] = useState<Record<string, string>>({});
+  const [timeH, setTimeH] = useState('0');
+  const [timeMin, setTimeMin] = useState('0');
+  const [timeS, setTimeS] = useState('0');
+  const [timeMs, setTimeMs] = useState('0');
 
   if (!championship) {
     return <p className="py-10 text-center text-sm text-zinc-500">Campeonato no encontrado.</p>;
@@ -61,19 +64,20 @@ export default function ChampionshipDetail() {
       timeMap[m.id] = result?.timeMs != null ? String(result.timeMs / 1000) : '';
     }
     setPositions(posMap);
-    setTimes(timeMap);
     setResultsEventId(eventId);
   };
 
   const handleSaveResults = () => {
     if (!activeEvent) return;
     if (isTimes) {
+      const h = parseInt(timeH) || 0;
+      const min = parseInt(timeMin) || 0;
+      const s = parseInt(timeS) || 0;
+      const ms = parseInt(timeMs) || 0;
+      const totalMs = h * 3600000 + min * 60000 + s * 1000 + ms;
       const entries: { userId: string; timeMs?: number }[] = [];
       for (const m of members) {
-        const raw = times[m.id];
-        const t = raw ? Number(raw) : NaN;
-        if (!Number.isFinite(t) || t <= 0) continue;
-        entries.push({ userId: m.id, timeMs: Math.round(t * 1000) });
+        entries.push({ userId: m.id, timeMs: totalMs > 0 ? totalMs : undefined });
       }
       setEventResults(championship.id, activeEvent.id, entries);
       setResultsEventId(null);
@@ -322,29 +326,49 @@ export default function ChampionshipDetail() {
           </p>
           {members.map((m) => {
             if (isTimes) {
-              const raw = times[m.id] ?? '';
-              return (
+return (
                 <div key={m.id} className="flex items-center gap-3">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-800 text-[11px] font-semibold text-zinc-300 ring-1 ring-zinc-700/60">
                     {m.avatar ? <img src={m.avatar} alt={m.name} className="h-full w-full object-cover" /> : m.name?.[0] ?? '?'}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm text-zinc-200">{m.name}</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    inputMode="decimal"
-                    className="input w-24 py-1.5 text-center"
-                    value={raw}
-                    onChange={(e) => setTimes((p) => ({ ...p, [m.id]: e.target.value }))}
-                    placeholder="segundos"
-                    aria-label={`Tiempo de ${m.name}`}
-                  />
-                  <div className="mt-2 text-xs text-zinc-400">
-                    <span>h:</span> <span className="font-medium text-zinc-200">{Math.floor(parseInt(raw) / 3600)}</span>
-                    <span>min:</span> <span className="font-medium text-zinc-200">{Math.floor((parseInt(raw) % 3600) / 60)}</span>
-                    <span>seg:</span> <span className="font-medium text-zinc-200">{parseInt(raw) % 60}</span>
-                    <span>ms:</span> <span className="font-medium text-zinc-200">{(parseInt(raw) % 1) * 1000 | 0}</span>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max="23"
+                      step="1"
+                      inputMode="numeric"
+                      className="input w-6 py-1.5 text-center"
+                      onChange={(e) => setTimeH(e.target.value)}
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      max="59"
+                      step="1"
+                      inputMode="numeric"
+                      className="input w-6 py-1.5 text-center"
+                      onChange={(e) => setTimeMin(e.target.value)}
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      max="59"
+                      step="1"
+                      inputMode="numeric"
+                      className="input w-6 py-1.5 text-center"
+                      onChange={(e) => setTimeS(e.target.value)}
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      max="999"
+                      step="1"
+                      inputMode="numeric"
+                      className="input w-6 py-1.5 text-center"
+                      onChange={(e) => setTimeMs(e.target.value)}
+                    />
                   </div>
                 </div>
               );
@@ -383,3 +407,4 @@ export default function ChampionshipDetail() {
     </div>
   );
 }
+
