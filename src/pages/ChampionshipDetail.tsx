@@ -265,7 +265,7 @@ export default function ChampionshipDetail() {
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-2">
           <h2 className="section-title">Pruebas</h2>
-          <button className="btn btn-secondary px-3 py-1.5 text-xs" onClick={() => setEventOpen(true)}>
+          <button className="btn btn-secondary px-3 py-1.5 text-xs" onClick={() => setEventOpen(true)} type="button">
             <Plus size={14} /> Añadir
           </button>
         </div>
@@ -324,7 +324,7 @@ export default function ChampionshipDetail() {
                   })}
                 </div>
               )}
-              <button className="btn btn-secondary w-full text-xs" onClick={() => openResults(event.id)}>
+              <button className="btn btn-secondary w-full text-xs" onClick={() => openResults(event.id)} type="button">
                 {event.results.length > 0 ? 'Editar resultados' : 'Añadir resultados'}
               </button>
             </div>
@@ -358,7 +358,7 @@ export default function ChampionshipDetail() {
             />
             <p className="text-[10px] text-zinc-500 mt-1">Ej: 3 para 3 tandas del rally. La app sumará los tiempos.</p>
           </div>
-          <button className="btn btn-primary w-full py-3" onClick={handleAddEvent} disabled={!eventName.trim()}>
+          <button className="btn btn-primary w-full py-3" onClick={handleAddEvent} disabled={!eventName.trim()} type="button">
             Añadir prueba
           </button>
         </div>
@@ -457,7 +457,7 @@ export default function ChampionshipDetail() {
               </div>
             );
           })}
-          <button className="btn btn-primary w-full py-3" onClick={handleSaveResults}>
+          <button className="btn btn-primary w-full py-3" onClick={handleSaveResults} type="button">
             Guardar resultados
           </button>
         </div>
