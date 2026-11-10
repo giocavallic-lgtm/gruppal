@@ -5,6 +5,7 @@ import { hasSupabase } from './config';
 import Layout from './components/Layout';
 import Onboarding from './pages/Onboarding';
 import Auth from './pages/Auth';
+import Birthday from './pages/Birthday';
 
 const Home = lazy(() => import('./pages/Home'));
 const GroupDetail = lazy(() => import('./pages/GroupDetail'));
@@ -59,16 +60,22 @@ export default function App() {
   // Cloud mode
   if (hasSupabase) {
     if (!session || !currentUser) {
-      return <Auth />;
+      const currentPath = window?.location?.pathname ?? '';
+      if (currentPath !== '/birthday') {
+        return <Auth />;
+      }
     }
   } else {
     // Local mode
     if (!currentUser) {
-      return (
-        <Routes>
-          <Route path="*" element={<Onboarding />} />
-        </Routes>
-      );
+      const currentPath = window?.location?.pathname ?? '';
+      if (currentPath !== '/birthday') {
+        return (
+          <Routes>
+            <Route path="*" element={<Onboarding />} />
+          </Routes>
+        );
+      }
     }
   }
 
@@ -84,6 +91,7 @@ export default function App() {
           <Route path="/bets/:id" element={<BetDetail />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/legal" element={<Legal />} />
+          <Route path="/birthday" element={<Birthday />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Route>
       </Routes>
